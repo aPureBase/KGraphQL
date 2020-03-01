@@ -1,3 +1,10 @@
+apply plugin: 'kotlinx-serialization'
 dependencies {
     compile project(':kgraphql')
+    compile "io.ktor:ktor-server-core:$ktor_version"
+    compile "io.ktor:ktor-serialization:$ktor_version"
+    compile 'com.github.salomonbrys.kotson:kotson:2.5.0'
+
+    testImplementation "com.github.makarenkoanton:kraph:0.6.1"
+    testImplementation "io.ktor:ktor-server-test-host:$ktor_version"
 }

@@ -1,0 +1,12 @@
+apply plugin: 'application'
+mainClassName = "io.ktor.server.netty.EngineMain"
+dependencies {
+    compile project(':kgraphql-ktor')
+    compile "io.ktor:ktor-server-netty:$ktor_version"
+    compile "ch.qos.logback:logback-classic:$logback_version"
+    compile "org.jetbrains.exposed:exposed-core:$exposed_version"
+    compile "org.jetbrains.exposed:exposed-jdbc:$exposed_version"
+    compile "org.jetbrains.exposed:exposed-java-time:$exposed_version"
+    compile "com.h2database:h2:$h2_version"
+    compile "com.zaxxer:HikariCP:$hikari_version"
+}
