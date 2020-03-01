@@ -17,7 +17,7 @@ const val GRAPHQL_ENDPOINT = "graphql"
 
 @KtorExperimentalAPI
 @UnstableDefault
-fun Route.graphql(ctx: Context? = null, block: SchemaBuilder.() -> Unit) {
+fun Route.graphql(ctxBuilder: ContextBuilder.(ApplicationCall) -> Unit = {}, block: SchemaBuilder.() -> Unit) {
     val schema = KGraphQL.schema(block)
     install(ContentNegotiation) {
         register(ContentType.Application.Json, GraphqlSerializationConverter())
@@ -25,10 +25,8 @@ fun Route.graphql(ctx: Context? = null, block: SchemaBuilder.() -> Unit) {
     }
     post(GRAPHQL_ENDPOINT) {
         val request = call.receive<GraphqlRequest>()
-        val result = if (ctx != null)
-            schema.execute(request.query, request.variables.toString(), ctx)
-        else
-            schema.execute(request.query, request.variables.toString())
+        val ctx = context { ctxBuilder(this, call) }
+        val result = schema.execute(request.query, request.variables.toString(), ctx)
         call.respond(result)
     }
 }

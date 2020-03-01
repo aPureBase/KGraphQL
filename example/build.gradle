@@ -3,6 +3,7 @@ mainClassName = "io.ktor.server.netty.EngineMain"
 dependencies {
     compile project(':kgraphql-ktor')
     compile "io.ktor:ktor-server-netty:$ktor_version"
+    compile "io.ktor:ktor-auth:$ktor_version"
     compile "ch.qos.logback:logback-classic:$logback_version"
     compile "org.jetbrains.exposed:exposed-core:$exposed_version"
     compile "org.jetbrains.exposed:exposed-jdbc:$exposed_version"

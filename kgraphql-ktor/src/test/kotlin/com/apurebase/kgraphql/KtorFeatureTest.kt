@@ -1,6 +1,9 @@
 package com.apurebase.kgraphql
 
 import com.apurebase.kgraphql.schema.dsl.SchemaBuilder
+import io.ktor.application.ApplicationCall
+import io.ktor.application.install
+import io.ktor.auth.*
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.routing.routing
@@ -14,13 +17,25 @@ import org.junit.jupiter.api.Test
 
 class KtorFeatureTest {
 
+    data class User(val id: Int = -1, val name: String = ""): Principal
+
     @UnstableDefault
     @KtorExperimentalAPI
-    private fun withServer(ctx: Context? = null, block: SchemaBuilder.() -> Unit): (Kraph.() -> Unit) -> String {
+    private fun withServer(ctxBuilder: ContextBuilder.(ApplicationCall) -> Unit = {}, block: SchemaBuilder.() -> Unit): (Kraph.() -> Unit) -> String {
         return {
             withTestApplication({
+                install(Authentication) {
+                    basic {
+                        realm = "ktor"
+                        validate {
+                            User(4, it.name)
+                        }
+                    }
+                }
                 routing {
-                    graphql(ctx) { block() }
+                    authenticate(optional = true) {
+                        graphql(ctxBuilder) { block() }
+                    }
                 }
             }) {
                 handleRequest {
@@ -77,11 +92,12 @@ class KtorFeatureTest {
     @Test
     fun `Simple context test`() {
         val georgeName = "George"
-        val context = context {
+        val contextSetup: ContextBuilder.(ApplicationCall) -> Unit = { _ ->
             + UserData(georgeName, "STUFF")
             inject("ADA")
         }
-        val server = withServer(context) {
+
+        val server = withServer(contextSetup) {
                 query("actor") {
                     resolver { -> Actor("George", 23) }
                 }
@@ -141,5 +157,4 @@ class KtorFeatureTest {
             }
         } shouldBeEqualTo "{\"data\":{\"test\":\"success: InputTwo(one=InputOne(enum=M1, id=M1), quantity=3434, tokens=[23, 34, 21, 434])\"}}"
     }
-
 }

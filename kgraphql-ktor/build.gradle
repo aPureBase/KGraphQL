@@ -7,4 +7,5 @@ dependencies {
 
     testImplementation "com.github.makarenkoanton:kraph:0.6.1"
     testImplementation "io.ktor:ktor-server-test-host:$ktor_version"
+    testImplementation "io.ktor:ktor-auth:$ktor_version"
 }
