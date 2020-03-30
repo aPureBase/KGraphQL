@@ -3,13 +3,14 @@ package com.apurebase.kgraphql.schema.execution
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlin.coroutines.CoroutineContext
 
 class DeferredJsonArray internal constructor(
-    private val dispatcher: CoroutineDispatcher
+    ctx: CoroutineContext
 ): CoroutineScope {
 
     private val job = SupervisorJob()
-    override val coroutineContext = (dispatcher + job)
+    override val coroutineContext = (ctx + job)
 
     private val deferredArray = mutableListOf<Deferred<JsonElement>>()
     private var completedArray: List<JsonElement>? = null
@@ -23,14 +24,14 @@ class DeferredJsonArray internal constructor(
     }
 
     suspend fun addDeferredObj(block: suspend DeferredJsonMap.() -> Unit) {
-        val map = DeferredJsonMap(dispatcher)
+        val map = DeferredJsonMap(coroutineContext)
         block(map)
         addDeferredValue(map.asDeferred())
     }
 
     // TODO: Add support for this within the [DataLoaderPreparedRequestExecutor]
     suspend fun addDeferredArray(block: suspend DeferredJsonArray.() -> Unit) {
-        val array = DeferredJsonArray(dispatcher)
+        val array = DeferredJsonArray(coroutineContext)
         block(array)
         addDeferredValue(array.asDeferred())
     }

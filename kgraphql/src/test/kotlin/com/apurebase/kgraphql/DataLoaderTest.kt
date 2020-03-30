@@ -3,13 +3,15 @@ package com.apurebase.kgraphql
 import com.apurebase.kgraphql.schema.DefaultSchema
 import com.apurebase.kgraphql.schema.dsl.SchemaBuilder
 import com.apurebase.kgraphql.schema.execution.Executor
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import nidomiro.kdataloader.ExecutionResult
-import org.amshove.kluent.shouldEqual
+import org.amshove.kluent.shouldBeEqualTo
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
+import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.RepeatedTest
+import org.junit.jupiter.api.TestFactory
 import java.time.Duration.ofSeconds
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -78,7 +80,6 @@ class DataLoaderTest {
                 }
 
                 dataProperty<Int, Person?>("respondsTo") {
-//                    setReturnType { jogvan as Person? }
                     prepare { it.id }
                     loader { keys ->
                         println("== Running [respondsTo] loader with keys: $keys ==")
@@ -86,7 +87,6 @@ class DataLoaderTest {
                     }
                 }
                 dataProperty<Int, List<Person>>("colleagues") {
-//                    setReturnType { listOf() }
                     prepare { it.id }
                     loader { keys ->
                         println("== Running [colleagues] loader with keys: $keys ==")
@@ -113,7 +113,6 @@ class DataLoaderTest {
             type<ABC> {
 
                 dataProperty<String, Int>("B") {
-//                    setReturnType { 25 }
                     loader { keys ->
                         println("== Running [B] loader with keys: $keys ==")
                         counters.abcB.loader.incrementAndGet()
@@ -127,24 +126,31 @@ class DataLoaderTest {
                     }
                 }
 
+                @Suppress("BlockingMethodInNonBlockingContext")
                 property<ABC>("simpleChild") {
                     resolver {
-                        delay(10)
-                        Thread.sleep(10)
-                        delay(10)
+                        delay((1..5L).random())
+                        Thread.sleep((1..5L).random())
+                        delay((1..5L).random())
                         ABC("NewChild!")
                     }
                 }
 
                 dataProperty<Int?, Person?>("person") {
-//                    setReturnType { null as Person? }
                     prepare { it.personId }
                     loader { personIds ->
                         personIds.map {
+                            delay(1)
                             ExecutionResult.Success(
                                 if (it == null || it < 1) null else allPeople[it - 1]
                             )
                         }
+                    }
+                }
+                property<Person?>("personOld") {
+                    resolver {
+                        delay(1)
+                        if (it.personId == null || it.personId < 1) null else allPeople[it.personId - 1]
                     }
                 }
 
@@ -168,12 +174,23 @@ class DataLoaderTest {
                         parent.value
                     }
                 }
+
+                property<List<ABC>>("childrenOld") {
+                    resolver { parent ->
+                        when (parent.value) {
+                            "Testing 1" -> listOf(ABC("Hello"), ABC("World"))
+                            "Testing 2" -> listOf(ABC("Fizz"), ABC("Buzz"))
+                            "Testing 3" -> listOf(ABC("Jógvan"), ABC("Høgni"))
+                            else -> listOf(ABC("${parent.value}Nest-0"), ABC("${parent.value}Nest-1"))
+                        }
+                    }
+                }
+
             }
 
 
             type<Tree> {
                 dataProperty<Int, Tree>("child") {
-//                    setReturnType { Tree(0, "") }
                     loader { keys ->
                         println("== Running [child] loader with keys: $keys ==")
                         counters.treeChild.loader.incrementAndGet()
@@ -191,6 +208,87 @@ class DataLoaderTest {
         }
 
         return schema to counters
+    }
+
+    @TestFactory
+    fun `stress test`(): List<DynamicTest> {
+        val (schema) = schema()
+        val fn: (Boolean) -> List<DynamicTest> = { withTypeName ->
+            val query = """
+                {
+                    abc {
+                        __typename
+                        value
+                        person: personOld {
+                            fullName
+                            __typename
+                        }
+                        simpleChild {
+                            __typename
+                            value
+                            person: personOld {
+                                __typename
+                                fullName
+                            }
+                            simpleChild {
+                                __typename
+                                value
+                            }
+                        }
+                    }
+                }
+            """.trimIndent().let {
+                if (withTypeName) it
+                else it.replace("__typename", "")
+            }
+
+            val test: (Int) -> DynamicTest = {
+                DynamicTest.dynamicTest("test-$it") {
+                    val result = schema.executeBlocking(query).also(::println).deserialize()
+
+                    result.extract<String>("data/abc[0]/value") shouldBeEqualTo "Testing 1"
+                    result.extract<String>("data/abc[0]/person/fullName") shouldBeEqualTo "Jógvan Olsen"
+                    result.extract<String>("data/abc[0]/simpleChild/value") shouldBeEqualTo "NewChild!"
+                    result.extract<String?>("data/abc[0]/simpleChild/person") shouldBeEqualTo null
+                    result.extract<String?>("data/abc[0]/simpleChild/simpleChild/value") shouldBeEqualTo "NewChild!"
+
+                    result.extract<String>("data/abc[1]/value") shouldBeEqualTo "Testing 2"
+                    result.extract<String?>("data/abc[1]/person") shouldBeEqualTo null
+                    result.extract<String>("data/abc[1]/simpleChild/value") shouldBeEqualTo "NewChild!"
+                    result.extract<String?>("data/abc[1]/simpleChild/person") shouldBeEqualTo null
+                    result.extract<String?>("data/abc[1]/simpleChild/simpleChild/value") shouldBeEqualTo "NewChild!"
+
+                    result.extract<String>("data/abc[2]/value") shouldBeEqualTo "Testing 3"
+                    result.extract<String?>("data/abc[2]/person/fullName") shouldBeEqualTo "Høgni Juul"
+                    result.extract<String>("data/abc[2]/simpleChild/value") shouldBeEqualTo "NewChild!"
+                    result.extract<String?>("data/abc[2]/simpleChild/person") shouldBeEqualTo null
+                    result.extract<String?>("data/abc[2]/simpleChild/simpleChild/value") shouldBeEqualTo "NewChild!"
+
+                    if (withTypeName) {
+                        result.extract<String>("data/abc[0]/__typename") shouldBeEqualTo "ABC"
+                        result.extract<String>("data/abc[0]/person/__typename") shouldBeEqualTo "Person"
+                        result.extract<String>("data/abc[0]/simpleChild/__typename") shouldBeEqualTo "ABC"
+                        result.extract<String>("data/abc[1]/__typename") shouldBeEqualTo "ABC"
+                        result.extract<String>("data/abc[1]/simpleChild/__typename") shouldBeEqualTo "ABC"
+                        result.extract<String>("data/abc[2]/__typename") shouldBeEqualTo "ABC"
+                        result.extract<String>("data/abc[2]/simpleChild/__typename") shouldBeEqualTo "ABC"
+                    }
+                }
+            }
+
+            (1..100).chunked(25).flatMap { chunk ->
+                runBlocking {
+                    coroutineScope {
+                        chunk.map {
+                            async { test(it) }
+                        }.awaitAll()
+                    }
+                }
+            }
+        }
+
+
+        return fn(true) + fn(false)
     }
 
     @RepeatedTest(repeatTimes)
@@ -211,8 +309,7 @@ class DataLoaderTest {
                 }                
             """.trimIndent()
 
-            val result = schema.executeBlocking(query).also(::println).deserialize()
-
+            schema.executeBlocking(query).also(::println).deserialize()
         }
     }
 
@@ -257,7 +354,7 @@ class DataLoaderTest {
                 }
             """.trimIndent()
 
-            val result = schema.executeBlocking(query).also(::println).deserialize()
+            schema.executeBlocking(query).also(::println).deserialize()
         }
     }
 
@@ -280,9 +377,9 @@ class DataLoaderTest {
             """.trimIndent()
             val result = schema.executeBlocking(query).also(::println).deserialize()
 
-            result.extract<String>("data/abc[0]/person/fullName") shouldEqual "${jogvan.firstName} ${jogvan.lastName}"
-            extractOrNull<String>(result, "data/abc[1]/person") shouldEqual null
-            result.extract<String>("data/abc[2]/person/fullName") shouldEqual "${juul.firstName} ${juul.lastName}"
+            result.extract<String>("data/abc[0]/person/fullName") shouldBeEqualTo "${jogvan.firstName} ${jogvan.lastName}"
+            extractOrNull<String>(result, "data/abc[1]/person") shouldBeEqualTo null
+            result.extract<String>("data/abc[2]/person/fullName") shouldBeEqualTo "${juul.firstName} ${juul.lastName}"
         }
     }
 
@@ -307,8 +404,8 @@ class DataLoaderTest {
             val result = schema.executeBlocking(query).also(::println).deserialize()
 
 
-            result.extract<String>("data/people[0]/respondsTo/fullName") shouldEqual "${juul.firstName} ${juul.lastName}"
-            result.extract<String>("data/people[1]/colleagues[0]/fullName") shouldEqual "${jogvan.firstName} ${jogvan.lastName}"
+            result.extract<String>("data/people[0]/respondsTo/fullName") shouldBeEqualTo "${juul.firstName} ${juul.lastName}"
+            result.extract<String>("data/people[1]/colleagues[0]/fullName") shouldBeEqualTo "${jogvan.firstName} ${jogvan.lastName}"
         }
     }
 
@@ -330,13 +427,13 @@ class DataLoaderTest {
             """.trimIndent()
 
             val result = schema.executeBlocking(query).also(::println).deserialize()
-            counters.treeChild.prepare.get() shouldEqual 2
-            counters.treeChild.loader.get() shouldEqual 1
+            counters.treeChild.prepare.get() shouldBeEqualTo 2
+            counters.treeChild.loader.get() shouldBeEqualTo 1
 
 
-            result.extract<Int>("data/tree[1]/id") shouldEqual 2
-            result.extract<Int>("data/tree[0]/child/id") shouldEqual 14
-            result.extract<Int>("data/tree[1]/child/id") shouldEqual 15
+            result.extract<Int>("data/tree[1]/id") shouldBeEqualTo 2
+            result.extract<Int>("data/tree[0]/child/id") shouldBeEqualTo 14
+            result.extract<Int>("data/tree[1]/child/id") shouldBeEqualTo 15
         }
     }
 
@@ -354,13 +451,13 @@ class DataLoaderTest {
 
             val result = schema.executeBlocking(query).also(::println).deserialize()
 
-            counters.treeChild.prepare.get() shouldEqual 4
-            counters.treeChild.loader.get() shouldEqual 1
+            counters.treeChild.prepare.get() shouldBeEqualTo 4
+            counters.treeChild.loader.get() shouldBeEqualTo 1
 
-            result.extract<Int>("data/first[1]/id") shouldEqual 2
-            result.extract<Int>("data/first[0]/child/id") shouldEqual 14
-            result.extract<Int>("data/first[1]/child/id") shouldEqual 15
-            result.extract<Int>("data/second[1]/child/id") shouldEqual 15
+            result.extract<Int>("data/first[1]/id") shouldBeEqualTo 2
+            result.extract<Int>("data/first[0]/child/id") shouldBeEqualTo 14
+            result.extract<Int>("data/first[1]/child/id") shouldBeEqualTo 15
+            result.extract<Int>("data/second[1]/child/id") shouldBeEqualTo 15
 
         }
     }
@@ -387,7 +484,7 @@ class DataLoaderTest {
                 }
             """.trimIndent()
 
-            val result = schema.executeBlocking(query).also(::println).deserialize()
+            schema.executeBlocking(query).also(::println).deserialize()
 
 //            throw TODO("Assert results")
         }

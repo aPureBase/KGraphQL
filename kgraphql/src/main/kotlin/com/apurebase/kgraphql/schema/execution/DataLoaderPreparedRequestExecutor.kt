@@ -59,7 +59,6 @@ class DataLoaderPreparedRequestExecutor(val schema: DefaultSchema) : RequestExec
 
             val value = loader.loadAsync(preparedValue)
 
-            // TODO: Create unit tests with nested different dataLoaders
             builder.deferredLaunch {
                 val count = get(loader)
                 val stats = loader.createStatisticsSnapshot()
@@ -363,16 +362,21 @@ class DataLoaderPreparedRequestExecutor(val schema: DefaultSchema) : RequestExec
         applyKeyToElement(ctx, deferred, node, field.returnType, parentCount)
     }
 
-    override suspend fun suspendExecute(plan: ExecutionPlan, variables: VariablesJson, context: Context) = deferredJsonBuilder(dispatcher, schema.configuration.timeout) {
-        val ctx = ExecutionContext(Variables(schema, variables, plan.firstOrNull { it.variables != null }?.variables), context)
+    override suspend fun suspendExecute(plan: ExecutionPlan, variables: VariablesJson, context: Context) = coroutineScope {
+        deferredJsonBuilder(timeout = schema.configuration.timeout) {
+            val ctx = ExecutionContext(
+                Variables(schema, variables, plan.firstOrNull { it.variables != null }?.variables),
+                context
+            )
 
 
-        "data" toDeferredObj {
-            plan.forEach { node ->
-                if (shouldInclude(ctx, node)) writeOperation(ctx, node, node.field as Field.Function<*, *>)
+            "data" toDeferredObj {
+                plan.forEach { node ->
+                    if (shouldInclude(ctx, node)) writeOperation(ctx, node, node.field as Field.Function<*, *>)
+                }
             }
-        }
-    }.toString()
+        }.toString()
+    }
 
     private fun createNullNode(node: Execution.Node, returnType: Type): JsonNull = if (returnType !is Type.NonNull) {
         JsonNull

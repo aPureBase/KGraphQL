@@ -3,14 +3,14 @@ package com.apurebase.kgraphql.schema.execution
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
 
-suspend fun deferredJsonBuilder(
-    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+@Suppress("SuspendFunctionOnCoroutineScope")
+suspend fun CoroutineScope.deferredJsonBuilder(
     timeout: Long? = null,
     init: suspend DeferredJsonMap.() -> Unit
 ): JsonObject {
     val block: suspend () -> JsonObject = {
         try {
-            val builder = DeferredJsonMap(dispatcher)
+            val builder = DeferredJsonMap(coroutineContext)
             builder.init()
             builder.awaitAll()
             builder.build()

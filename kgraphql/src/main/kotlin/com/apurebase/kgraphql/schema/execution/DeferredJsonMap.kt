@@ -3,13 +3,14 @@ package com.apurebase.kgraphql.schema.execution
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlin.coroutines.CoroutineContext
 
 class DeferredJsonMap internal constructor(
-    private val dispatcher: CoroutineDispatcher
+    ctx: CoroutineContext
 ): CoroutineScope {
 
     internal val job = Job()
-    override val coroutineContext = (dispatcher + job)
+    override val coroutineContext = (ctx + job)
 
     private val deferredMap = mutableMapOf<String, Deferred<JsonElement>>()
     private val unDefinedDeferredMap = mutableMapOf<String, DeferredJsonMap>()
@@ -21,7 +22,6 @@ class DeferredJsonMap internal constructor(
     }
 
     infix fun String.toDeferredValue(element: Deferred<JsonElement>) {
-//        require(deferredMap[this] == null) { "Key '$this' is already registered in builder" }
         deferredMap[this] = element
     }
 
@@ -30,14 +30,14 @@ class DeferredJsonMap internal constructor(
             val prevMap = unDefinedDeferredMap.getValue(this)
             block(prevMap)
         } else {
-            val map = DeferredJsonMap(dispatcher)
+            val map = DeferredJsonMap(coroutineContext)
             block(map)
             unDefinedDeferredMap[this] = map
         }
     }
 
     suspend infix fun String.toDeferredArray(block: suspend DeferredJsonArray.() -> Unit) {
-        val array = DeferredJsonArray(dispatcher)
+        val array = DeferredJsonArray(coroutineContext)
         block(array)
         this@toDeferredArray toDeferredValue array.asDeferred()
     }
