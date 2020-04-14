@@ -1,8 +1,8 @@
 package com.apurebase.kgraphql
 
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.SerialClassDescImpl
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonInput
+import kotlinx.serialization.json.JsonObject
 
 
 @Serializable
@@ -13,13 +13,11 @@ data class GraphqlRequest(
 ) {
 
     @Serializer(forClass = GraphqlRequest::class)
+    @OptIn(ImplicitReflectionSerializer::class)
     companion object : KSerializer<GraphqlRequest> {
-        override val descriptor: SerialDescriptor = object : SerialClassDescImpl("GraphqlRequest") {
-            init {
-                addElement("query")
-                addElement("variables")
-                //addElement("operationName")
-            }
+        override val descriptor: SerialDescriptor = SerialDescriptor("GraphqlRequest") {
+            element<String>("query")
+            element<String>("variables")
         }
 
         override fun serialize(encoder: Encoder, obj: GraphqlRequest) {
@@ -31,7 +29,7 @@ data class GraphqlRequest(
         }
 
         private val deserializationStrategy = object : DeserializationStrategy<JsonObject?> {
-            override val descriptor: SerialDescriptor = SerialClassDescImpl("JsonObject")
+            override val descriptor: SerialDescriptor = SerialDescriptor("JsonObject")
 
             override fun deserialize(decoder: Decoder): JsonObject? {
                 val input = decoder as? JsonInput ?: throw SerializationException("Expected Json Input")
