@@ -19,19 +19,16 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import kotlinx.coroutines.*
-import kotlin.coroutines.CoroutineContext
-import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 
 @Suppress("UNCHECKED_CAST") // For valid structure there is no risk of ClassCastException
-class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor, CoroutineScope {
+class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
 
     inner class ExecutionContext(
         val variables: Variables,
         val requestContext: Context
     )
-    override val coroutineContext: CoroutineContext = Job()
 
     private val argumentsHandler = ArgumentsHandler(schema)
 
@@ -48,7 +45,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor, Coro
         }
     }
 
-    override suspend fun suspendExecute(plan: ExecutionPlan, variables: VariablesJson, context: Context): String {
+    override suspend fun suspendExecute(plan: ExecutionPlan, variables: VariablesJson, context: Context): String = coroutineScope {
         val root = jsonNodeFactory.objectNode()
         val data = root.putObject("data")
 
@@ -68,11 +65,8 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor, Coro
             }
         }
 
-        return objectWriter.writeValueAsString(root)
-    }
-
-    override fun execute(plan: ExecutionPlan, variables: VariablesJson, context: Context): String = runBlocking {
-        suspendExecute(plan, variables, context)
+        @Suppress("BlockingMethodInNonBlockingContext")
+        objectWriter.writeValueAsString(root)
     }
 
     private suspend fun <T> writeOperation(isSubscription: Boolean, ctx: ExecutionContext, node: Execution.Node, operation: FunctionWrapper<T>): JsonNode {

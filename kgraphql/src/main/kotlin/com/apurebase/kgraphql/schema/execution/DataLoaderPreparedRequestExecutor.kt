@@ -24,11 +24,9 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.KProperty1
 
 
-class DataLoaderPreparedRequestExecutor(val schema: DefaultSchema) : RequestExecutor, CoroutineScope {
+class DataLoaderPreparedRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
 
     private val argumentsHandler = ArgumentsHandler(schema)
-    private val dispatcher = schema.configuration.coroutineDispatcher
-    override val coroutineContext = Job()
 
     inner class ExecutionContext(
         val variables: Variables,
@@ -382,10 +380,6 @@ class DataLoaderPreparedRequestExecutor(val schema: DefaultSchema) : RequestExec
         JsonNull
     } else {
         throw ExecutionException("null result for non-nullable operation ${node.field}", node)
-    }
-
-    override fun execute(plan: ExecutionPlan, variables: VariablesJson, context: Context) = runBlocking {
-        suspendExecute(plan, variables, context)
     }
 
     private suspend fun shouldInclude(ctx: ExecutionContext, executionNode: Execution): Boolean {

@@ -13,6 +13,7 @@ import com.apurebase.kgraphql.schema.structure.LookupSchema
 import com.apurebase.kgraphql.schema.structure.RequestInterpreter
 import com.apurebase.kgraphql.schema.structure.SchemaModel
 import com.apurebase.kgraphql.schema.structure.Type
+import kotlinx.coroutines.coroutineScope
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
@@ -35,15 +36,14 @@ class DefaultSchema (
 
     private val cacheParser: CachingDocumentParser by lazy { CachingDocumentParser(configuration.documentParserCacheMaximumSize) }
 
-    override suspend fun execute(request: String, variables: String?, context: Context): String {
+    override suspend fun execute(request: String, variables: String?, context: Context): String = coroutineScope {
         val parsedVariables = variables
             ?.let { VariablesJson.Defined(configuration.objectMapper, variables) }
             ?: VariablesJson.Empty()
 
         val document = Parser(request).parseDocument()
 
-
-        return requestExecutor.suspendExecute(
+        requestExecutor.suspendExecute(
             plan = requestInterpreter.createExecutionPlan(document, parsedVariables),
             variables = parsedVariables,
             context = context
