@@ -27,9 +27,11 @@ data class DocumentNode(
             for (sel in curr.selections) {
                 when (sel) {
                     is SelectionNode.FieldNode -> {
+                        // Has nested fields, dig deeper
                         if (sel.selectionSet != null) {
                             q.add(sel.selectionSet)
                         }
+                        // This is a leaf, add to fields
                         else {
                             fields.add(sel.aliasOrName)
                         }

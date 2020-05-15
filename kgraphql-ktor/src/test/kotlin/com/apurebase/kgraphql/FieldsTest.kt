@@ -11,7 +11,7 @@ class FieldsTest {
     @UnstableDefault
     @KtorExperimentalAPI
     @Test
-    fun `Fields test`() {
+    fun `All fields can be read is case of a single entity`() {
         val server = withServer {
             query("actor") {
                 resolver { ctx: Context ->
