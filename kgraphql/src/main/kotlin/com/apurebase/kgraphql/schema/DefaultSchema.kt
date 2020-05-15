@@ -19,43 +19,6 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
 
-private val DocumentNode.fields: List<String>
-    get() {
-        val q: Queue<SelectionSetNode> = LinkedList<SelectionSetNode>()
-        val defs = this.definitions.mapNotNull { d: DefinitionNode ->
-            when (d) {
-                is DefinitionNode.ExecutableDefinitionNode ->
-                    d
-                else -> null
-            }
-        }
-        defs.forEach { d ->
-            q.add(d.selectionSet)
-        }
-
-        val fields = mutableListOf<NameNode>()
-        while (!q.isEmpty()) {
-            val curr = q.remove()
-
-            for (sel in curr.selections) {
-                when (sel) {
-                    is SelectionNode.FieldNode -> {
-                        if (sel.selectionSet != null) {
-                            q.add(sel.selectionSet)
-                        }
-                        else {
-                            fields.add(sel.aliasOrName)
-                        }
-                    }
-                }
-            }
-        }
-
-        return fields.map {
-            it.value
-        }
-    }
-
 class DefaultSchema (
         override val configuration: SchemaConfiguration,
         internal val model : SchemaModel
