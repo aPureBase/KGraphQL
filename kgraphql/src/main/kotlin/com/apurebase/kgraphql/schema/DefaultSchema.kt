@@ -8,15 +8,53 @@ import com.apurebase.kgraphql.schema.introspection.__Schema
 import com.apurebase.kgraphql.request.Parser
 import com.apurebase.kgraphql.schema.execution.*
 import com.apurebase.kgraphql.schema.execution.Executor.*
-import com.apurebase.kgraphql.schema.model.ast.NameNode
+import com.apurebase.kgraphql.schema.model.ast.*
 import com.apurebase.kgraphql.schema.structure.LookupSchema
 import com.apurebase.kgraphql.schema.structure.RequestInterpreter
 import com.apurebase.kgraphql.schema.structure.SchemaModel
 import com.apurebase.kgraphql.schema.structure.Type
 import kotlinx.coroutines.coroutineScope
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
+
+private val DocumentNode.fields: List<String>
+    get() {
+        val q: Queue<SelectionSetNode> = LinkedList<SelectionSetNode>()
+        val defs = this.definitions.mapNotNull { d: DefinitionNode ->
+            when (d) {
+                is DefinitionNode.ExecutableDefinitionNode ->
+                    d
+                else -> null
+            }
+        }
+        defs.forEach { d ->
+            q.add(d.selectionSet)
+        }
+
+        val fields = mutableListOf<NameNode>()
+        while (!q.isEmpty()) {
+            val curr = q.remove()
+
+            for (sel in curr.selections) {
+                when (sel) {
+                    is SelectionNode.FieldNode -> {
+                        if (sel.selectionSet != null) {
+                            q.add(sel.selectionSet)
+                        }
+                        else {
+                            fields.add(sel.aliasOrName)
+                        }
+                    }
+                }
+            }
+        }
+
+        return fields.map {
+            it.value
+        }
+    }
 
 class DefaultSchema (
         override val configuration: SchemaConfiguration,
@@ -46,11 +84,12 @@ class DefaultSchema (
         val document = Parser(request).parseDocument()
 
         val executor = options.executor?.let(this@DefaultSchema::getExecutor) ?: defaultRequestExecutor
+        val plan = requestInterpreter.createExecutionPlan(document, parsedVariables)
 
         executor.suspendExecute(
-            plan = requestInterpreter.createExecutionPlan(document, parsedVariables),
+            plan = plan,
             variables = parsedVariables,
-            context = context
+            context = context.withFields(document.fields)
         )
     }
 

@@ -87,6 +87,30 @@ class KtorFeatureTest {
     data class Actor(val name : String, val age: Int)
     data class UserData(val username: String, val stuff: String)
 
+    data class Fields(val stuff: String, val moreStuff: String)
+    @UnstableDefault
+    @KtorExperimentalAPI
+    @Test
+    fun `Fields test`() {
+        val server = withServer {
+            query("actor") {
+                resolver { ctx: Context ->
+                    val fields = ctx.fields().joinToString(",")
+                    Fields(stuff = fields, moreStuff = fields)
+                }
+            }
+        }
+
+        server {
+            query {
+                fieldObject("actor") {
+                    field("stuff")
+                    field("moreStuff")
+                }
+            }
+        } shouldBeEqualTo "{\"data\":{\"actor\":{\"stuff\":\"stuff,moreStuff\",\"moreStuff\":\"stuff,moreStuff\"}}}"
+    }
+
     @UnstableDefault
     @KtorExperimentalAPI
     @Test
@@ -99,7 +123,8 @@ class KtorFeatureTest {
 
         val server = withServer(contextSetup) {
                 query("actor") {
-                    resolver { -> Actor("George", 23) }
+                    resolver { ctx: Context ->
+                        Actor("George", 23) }
                 }
 
                 type<Actor> {
