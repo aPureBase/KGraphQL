@@ -21,35 +21,6 @@ class KtorFeatureTest {
 
     @UnstableDefault
     @KtorExperimentalAPI
-    private fun withServer(ctxBuilder: ContextBuilder.(ApplicationCall) -> Unit = {}, block: SchemaBuilder.() -> Unit): (Kraph.() -> Unit) -> String {
-        return {
-            withTestApplication({
-                install(Authentication) {
-                    basic {
-                        realm = "ktor"
-                        validate {
-                            User(4, it.name)
-                        }
-                    }
-                }
-                routing {
-                    authenticate(optional = true) {
-                        graphql(ctxBuilder) { block() }
-                    }
-                }
-            }) {
-                handleRequest {
-                    uri = "graphql"
-                    method = HttpMethod.Post
-                    addHeader(HttpHeaders.ContentType, "application/json;charset=UTF-8")
-                    setBody(Kraph { it(this) }.toRequestString())
-                }.response.content!!
-            }
-        }
-    }
-
-    @UnstableDefault
-    @KtorExperimentalAPI
     @Test
     fun `Simple query test`() {
         val server = withServer {
@@ -86,30 +57,6 @@ class KtorFeatureTest {
 
     data class Actor(val name : String, val age: Int)
     data class UserData(val username: String, val stuff: String)
-
-    data class Fields(val stuff: String, val moreStuff: String)
-    @UnstableDefault
-    @KtorExperimentalAPI
-    @Test
-    fun `Fields test`() {
-        val server = withServer {
-            query("actor") {
-                resolver { ctx: Context ->
-                    val fields = ctx.fields().joinToString(",")
-                    Fields(stuff = fields, moreStuff = fields)
-                }
-            }
-        }
-
-        server {
-            query {
-                fieldObject("actor") {
-                    field("stuff")
-                    field("moreStuff")
-                }
-            }
-        } shouldBeEqualTo "{\"data\":{\"actor\":{\"stuff\":\"stuff,moreStuff\",\"moreStuff\":\"stuff,moreStuff\"}}}"
-    }
 
     @UnstableDefault
     @KtorExperimentalAPI
@@ -181,5 +128,34 @@ class KtorFeatureTest {
                 variable("two", "InputTwo!", variables)
             }
         } shouldBeEqualTo "{\"data\":{\"test\":\"success: InputTwo(one=InputOne(enum=M1, id=M1), quantity=3434, tokens=[23, 34, 21, 434])\"}}"
+    }
+}
+
+@UnstableDefault
+@KtorExperimentalAPI
+fun withServer(ctxBuilder: ContextBuilder.(ApplicationCall) -> Unit = {}, block: SchemaBuilder.() -> Unit): (Kraph.() -> Unit) -> String {
+    return {
+        withTestApplication({
+            install(Authentication) {
+                basic {
+                    realm = "ktor"
+                    validate {
+                        KtorFeatureTest.User(4, it.name)
+                    }
+                }
+            }
+            routing {
+                authenticate(optional = true) {
+                    graphql(ctxBuilder) { block() }
+                }
+            }
+        }) {
+            handleRequest {
+                uri = "graphql"
+                method = HttpMethod.Post
+                addHeader(HttpHeaders.ContentType, "application/json;charset=UTF-8")
+                setBody(Kraph { it(this) }.toRequestString())
+            }.response.content!!
+        }
     }
 }
