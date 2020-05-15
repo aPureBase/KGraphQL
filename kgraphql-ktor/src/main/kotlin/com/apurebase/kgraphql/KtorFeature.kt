@@ -8,6 +8,7 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.request.receive
 import io.ktor.response.respond
+import io.ktor.response.respondBytes
 import io.ktor.response.respondFile
 import io.ktor.routing.Route
 import io.ktor.routing.get
@@ -46,7 +47,8 @@ fun Route.graphql(ctxBuilder: ContextBuilder.(ApplicationCall) -> Unit = {}, blo
 
     if (conf.playground) get(conf.endpoint) {
         @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-        call.respondFile(File(KtorGraphQLConfiguration::class.java.classLoader.getResource("playground.html").file))
+        call.respondBytes(KtorGraphQLConfiguration::class.java.classLoader.getResource("playground.html").readBytes(),
+                contentType = ContentType.Text.Html)
     }
 
 }
