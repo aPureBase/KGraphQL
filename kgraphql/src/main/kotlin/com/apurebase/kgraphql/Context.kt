@@ -1,12 +1,13 @@
 package com.apurebase.kgraphql
 
+import com.apurebase.kgraphql.schema.execution.Execution
 import com.apurebase.kgraphql.schema.introspection.NotIntrospected
 import kotlin.reflect.KClass
 
 @NotIntrospected
-class Context(private val map: Map<Any, Any>,
-              private val fields: List<String> = listOf()) {
+class Context(private val map: Map<Any, Any>) {
 
+    val nodes = mutableSetOf<Execution.Node>()
     operator fun <T : Any> get(kClass: KClass<T>): T? {
         val value = map[kClass]
         @Suppress("UNCHECKED_CAST")
@@ -14,11 +15,10 @@ class Context(private val map: Map<Any, Any>,
     }
 
     inline fun <reified T : Any> get() : T? = get(T::class)
-    fun fields(): List<String> {
-        return this.fields
-    }
 
-    fun withFields(fields: List<String>): Context {
-        return Context(this.map, fields)
+    fun nodes() = this.nodes.toList()
+
+    fun addNode(node: Execution.Node) {
+        this.nodes += node
     }
 }
