@@ -5,7 +5,7 @@ dependencies {
     compile "io.ktor:ktor-serialization:$ktor_version"
     compile 'com.github.salomonbrys.kotson:kotson:2.5.0'
 
-    testImplementation "com.github.makarenkoanton:kraph:0.6.1"
+    testImplementation "me.lazmaid.kraph:kraph:0.6.1"
     testImplementation "io.ktor:ktor-server-test-host:$ktor_version"
     testImplementation "io.ktor:ktor-auth:$ktor_version"
 }
