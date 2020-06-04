@@ -1,12 +1,13 @@
 package com.apurebase.kgraphql
 
+import com.apurebase.kgraphql.schema.execution.Execution
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.serialization.UnstableDefault
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.Test
 
 class FieldsTest {
-    data class Fields(val stuff: String, val moreStuff: String)
+    data class Node(val stuff: String, val moreStuff: String)
 
     @UnstableDefault
     @KtorExperimentalAPI
@@ -15,8 +16,18 @@ class FieldsTest {
         val server = withServer {
             query("actor") {
                 resolver { ctx: Context ->
-                    val fields = ctx.fields().joinToString(",")
-                    Fields(stuff = fields, moreStuff = fields)
+                    val nodes = ctx.nodes().flatMap {
+                        it.children
+                    }.mapNotNull {
+                        when (it) {
+                            is Execution.Node -> it
+                            else -> null
+                        }
+                    }.map {
+                        it.aliasOrKey
+                    }
+
+                    Node(nodes.toString(), nodes.toString())
                 }
             }
         }
@@ -28,6 +39,6 @@ class FieldsTest {
                     field("moreStuff")
                 }
             }
-        } shouldBeEqualTo "{\"data\":{\"actor\":{\"stuff\":\"stuff,moreStuff\",\"moreStuff\":\"stuff,moreStuff\"}}}"
+        } shouldBeEqualTo "{\"data\":{\"actor\":{\"stuff\":\"[stuff, moreStuff]\",\"moreStuff\":\"[stuff, moreStuff]\"}}}"
     }
 }
