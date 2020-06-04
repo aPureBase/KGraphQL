@@ -39,7 +39,10 @@ class DefaultSchema (
 
     private val cacheParser: CachingDocumentParser by lazy { CachingDocumentParser(configuration.documentParserCacheMaximumSize) }
 
-    override suspend fun execute(request: String, variables: String?, context: Context, options: ExecutionOptions): String = coroutineScope {
+    override suspend fun execute(request: String,
+                                 variables: String?,
+                                 context: Context,
+                                 options: ExecutionOptions): String = coroutineScope {
         val parsedVariables = variables
             ?.let { VariablesJson.Defined(configuration.objectMapper, variables) }
             ?: VariablesJson.Empty()
@@ -52,7 +55,7 @@ class DefaultSchema (
         executor.suspendExecute(
             plan = plan,
             variables = parsedVariables,
-            context = context.withFields(document.fields)
+            context = context
         )
     }
 
