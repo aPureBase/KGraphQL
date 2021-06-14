@@ -14,10 +14,17 @@ import com.apurebase.kgraphql.schema.scalar.serializeScalar
 import com.apurebase.kgraphql.schema.structure.Field
 import com.apurebase.kgraphql.schema.structure.InputValue
 import com.apurebase.kgraphql.schema.structure.Type
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonNull
 import nidomiro.kdataloader.DataLoader
 import nidomiro.kdataloader.factories.DataLoaderFactory
 import java.util.concurrent.ConcurrentHashMap
@@ -361,15 +368,30 @@ class DataLoaderPreparedRequestExecutor(val schema: DefaultSchema) : RequestExec
 
     override suspend fun suspendExecute(plan: ExecutionPlan, variables: VariablesJson, context: Context) = coroutineScope {
         deferredJsonBuilder(timeout = plan.options.timeout ?: schema.configuration.timeout) {
+            val exceptionMap = mutableMapOf<Execution.Node, GraphQLError>()
+
             val ctx = ExecutionContext(
                 Variables(schema, variables, plan.firstOrNull { it.variables != null }?.variables),
                 context
             )
 
-
             "data" toDeferredObj {
                 plan.forEach { node ->
-                    if (shouldInclude(ctx, node)) writeOperation(ctx, node, node.field as Field.Function<*, *>)
+                    if (shouldInclude(ctx, node))
+                        try {
+                            writeOperation(ctx, node, node.field as Field.Function<*, *>)
+                        } catch (e: GraphQLError) {
+                            exceptionMap[node] = e
+                        }
+                }
+            }
+
+            "errors" toDeferredArray {
+                // add errors to result
+                plan.forEach { node ->
+                    if (exceptionMap[node] != null) {
+                        this.addValue(createErrorNode(node, exceptionMap[node]))
+                    }
                 }
             }
         }.toString()
@@ -420,6 +442,45 @@ class DataLoaderPreparedRequestExecutor(val schema: DefaultSchema) : RequestExec
             if (schema.configuration.wrapErrors && e !is GraphQLError) {
                 throw GraphQLError(e.message ?: "", nodes = listOf(executionNode.selectionNode), originalError = e)
             } else throw e
+        }
+    }
+
+    private fun createErrorNode(node: Execution.Node, e: GraphQLError?): JsonElement {
+        return if (e == null) {
+            JsonNull.jsonNull
+        } else {
+            val elements = mutableMapOf<String, JsonElement>()
+            val errorFunction = schema.configuration.errorFunction
+            val message = errorFunction.errorMessageFunction(node, e)
+            elements["message"] = JsonPrimitive(message)
+            // TODO: Ensure that this is correct. https://spec.graphql.org/June2018/#example-90475
+            val path = mutableListOf<JsonElement>()
+            errorFunction.errorPathFunction(node, e).map {
+                when (it) {
+                    is String -> path.add(JsonPrimitive(it))
+                    is Int -> path.add(JsonPrimitive(it.toInt()))
+                    is Long -> path.add(JsonPrimitive(it.toLong()))
+                    else -> path.add(JsonPrimitive(it.toString()))
+                }
+            }
+            elements["path"] = JsonArray(path)
+            val locations = mutableListOf<JsonObject>()
+            errorFunction.errorLocationsFunction(node, e).forEach {
+                locations.add(JsonObject(mapOf("line" to JsonPrimitive(it.first), "column" to JsonPrimitive(it.second))))
+            }
+            elements["location"] = JsonArray(locations)
+            val extensions = errorFunction.errorExtensionsFunction(node, e)
+            if (extensions != null) {
+                elements["extensions"] = JsonObject(extensions.mapValues { entry ->
+                    when (entry.value) {
+                        is String -> JsonPrimitive(entry.value.toString())
+                        is Int -> JsonPrimitive(entry.value.toString().toInt())
+                        is Long -> JsonPrimitive(entry.value.toString().toLong())
+                        else -> JsonPrimitive(entry.value.toString())
+                    }
+                })
+            }
+            JsonObject(elements)
         }
     }
 }

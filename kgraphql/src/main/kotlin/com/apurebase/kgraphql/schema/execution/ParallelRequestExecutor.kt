@@ -1,13 +1,15 @@
 package com.apurebase.kgraphql.schema.execution
 
-import com.apurebase.kgraphql.*
+import com.apurebase.kgraphql.Context
+import com.apurebase.kgraphql.ExecutionException
+import com.apurebase.kgraphql.GraphQLError
 import com.apurebase.kgraphql.request.Variables
 import com.apurebase.kgraphql.request.VariablesJson
 import com.apurebase.kgraphql.schema.DefaultSchema
 import com.apurebase.kgraphql.schema.introspection.TypeKind
-import com.apurebase.kgraphql.schema.model.ast.ArgumentNodes
 import com.apurebase.kgraphql.schema.model.FunctionWrapper
 import com.apurebase.kgraphql.schema.model.TypeDef
+import com.apurebase.kgraphql.schema.model.ast.ArgumentNodes
 import com.apurebase.kgraphql.schema.scalar.serializeScalar
 import com.apurebase.kgraphql.schema.structure.Field
 import com.apurebase.kgraphql.schema.structure.InputValue
@@ -17,7 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import kotlinx.coroutines.*
+import kotlinx.coroutines.coroutineScope
 import nidomiro.kdataloader.DataLoader
 import kotlin.reflect.KProperty1
 
@@ -45,31 +47,51 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    override suspend fun suspendExecute(plan: ExecutionPlan, variables: VariablesJson, context: Context): String = coroutineScope {
-        val root = jsonNodeFactory.objectNode()
-        val data = root.putObject("data")
+    override suspend fun suspendExecute(plan: ExecutionPlan, variables: VariablesJson, context: Context): String =
+        coroutineScope {
+            val root = jsonNodeFactory.objectNode()
+            val data = root.putObject("data")
+            val errors = root.putArray("errors")
+            val exceptionMap = mutableMapOf<Execution.Node, GraphQLError>()
 
-        val resultMap = plan.toMapAsync(dispatcher) {
-            val ctx = ExecutionContext(Variables(schema, variables, it.variables), context)
-            if (determineInclude(ctx, it)) writeOperation(
-                isSubscription = plan.isSubscription,
-                ctx = ctx,
-                node = it,
-                operation = it.field as Field.Function<*, *>
-            ) else null
-        }
-
-        for (operation in plan) {
-            if (resultMap[operation] != null) { // Remove all by skip/include directives
-                data.set<JsonNode>(operation.aliasOrKey, resultMap[operation])
+            val resultMap = plan.toMapAsync(dispatcher) {
+                val ctx = ExecutionContext(Variables(schema, variables, it.variables), context)
+                if (determineInclude(ctx, it)) {
+                    try {
+                        writeOperation(
+                            isSubscription = plan.isSubscription,
+                            ctx = ctx,
+                            node = it,
+                            operation = it.field as Field.Function<*, *>
+                        )
+                    } catch (e: GraphQLError) {
+                        exceptionMap[it] = e
+                        null
+                    }
+                } else null
             }
+
+            for (operation in plan) {
+                // add data to result
+                if (resultMap[operation] != null) { // Remove all by skip/include directives
+                    data.set<JsonNode>(operation.aliasOrKey, resultMap[operation])
+                }
+                // add errors to result
+                if (exceptionMap[operation] != null) {
+                    errors.add(createErrorNode(operation, exceptionMap[operation]))
+                }
+            }
+
+            @Suppress("BlockingMethodInNonBlockingContext")
+            objectWriter.writeValueAsString(root)
         }
 
-        @Suppress("BlockingMethodInNonBlockingContext")
-        objectWriter.writeValueAsString(root)
-    }
-
-    private suspend fun <T> writeOperation(isSubscription: Boolean, ctx: ExecutionContext, node: Execution.Node, operation: FunctionWrapper<T>): JsonNode {
+    private suspend fun <T> writeOperation(
+        isSubscription: Boolean,
+        ctx: ExecutionContext,
+        node: Execution.Node,
+        operation: FunctionWrapper<T>
+    ): JsonNode {
         node.field.checkAccess(null, ctx.requestContext)
         val operationResult: T? = operation.invoke(
             isSubscription = isSubscription,
@@ -85,7 +107,12 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         return createNode(ctx, operationResult, node, node.field.returnType)
     }
 
-    private suspend fun <T> createUnionOperationNode(ctx: ExecutionContext, parent: T, node: Execution.Union, unionProperty: Field.Union<T>): JsonNode {
+    private suspend fun <T> createUnionOperationNode(
+        ctx: ExecutionContext,
+        parent: T,
+        node: Execution.Union,
+        unionProperty: Field.Union<T>
+    ): JsonNode {
         node.field.checkAccess(parent, ctx.requestContext)
 
         val operationResult: Any? = unionProperty.invoke(
@@ -103,14 +130,19 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             val expectedOneOf = unionProperty.type.possibleTypes!!.joinToString { it.name.toString() }
             throw ExecutionException(
                 "Unexpected type of union property value, expected one of: [$expectedOneOf]." +
-                    " value was $operationResult", node
+                        " value was $operationResult", node
             )
         }
 
         return createNode(ctx, operationResult, node, returnType ?: unionProperty.returnType)
     }
 
-    private suspend fun <T> createNode(ctx: ExecutionContext, value: T?, node: Execution.Node, returnType: Type): JsonNode {
+    private suspend fun <T> createNode(
+        ctx: ExecutionContext,
+        value: T?,
+        node: Execution.Node,
+        returnType: Type
+    ): JsonNode {
         return when {
             value == null -> createNullNode(node, returnType)
 
@@ -157,7 +189,10 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             is Type.Enum<*> -> {
                 jsonNodeFactory.textNode(value.toString())
             }
-            is TypeDef.Object<*> -> throw ExecutionException("Cannot handle object return type, schema structure exception", node)
+            is TypeDef.Object<*> -> throw ExecutionException(
+                "Cannot handle object return type, schema structure exception",
+                node
+            )
             else -> throw ExecutionException("Invalid Type:  ${returnType.name}", node)
         }
     }
@@ -170,7 +205,12 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    private suspend fun <T> createObjectNode(ctx: ExecutionContext, value: T, node: Execution.Node, type: Type): ObjectNode {
+    private suspend fun <T> createObjectNode(
+        ctx: ExecutionContext,
+        value: T,
+        node: Execution.Node,
+        type: Type
+    ): ObjectNode {
         val objectNode = jsonNodeFactory.objectNode()
         for (child in node.children) {
             when (child) {
@@ -184,12 +224,61 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         return objectNode
     }
 
-    private suspend fun <T> handleProperty(ctx: ExecutionContext, value: T, child: Execution, type: Type, childrenSize: Int): Pair<String, JsonNode?> {
+    private fun createErrorNode(node: Execution.Node, e: GraphQLError?): JsonNode {
+        return if (e == null) {
+            jsonNodeFactory.nullNode()
+        } else {
+            val objectNode = jsonNodeFactory.objectNode()
+            val errorFunction = schema.configuration.errorFunction
+            val message = errorFunction.errorMessageFunction(node, e)
+            objectNode.set<JsonNode>("message", objectNode.textNode(message))
+            // TODO: Ensure that this is correct. https://spec.graphql.org/June2018/#example-90475
+            val path = objectNode.arrayNode()
+            errorFunction.errorPathFunction(node, e).forEach {
+                when (it) {
+                    is String -> path.add(path.textNode(it))
+                    is Int -> path.add(path.numberNode(it.toInt()))
+                    is Long -> path.add(path.numberNode(it.toLong()))
+                    else -> path.add(path.textNode(it.toString()))
+                }
+            }
+            objectNode.set<JsonNode>("path", path)
+            val locationsNode = objectNode.arrayNode()
+            errorFunction.errorLocationsFunction(node, e).forEach {
+                val locationNode = locationsNode.objectNode()
+                locationNode.put("line", it.first)
+                locationNode.put("column", it.second)
+                locationsNode.add(locationNode)
+            }
+            objectNode.set<JsonNode>("locations", locationsNode)
+            val extensions = errorFunction.errorExtensionsFunction(node, e)
+            if (extensions != null) {
+                val extensionsNode = objectNode.objectNode()
+                extensions.forEach { key, value ->
+                    when (value) {
+                        is String -> extensionsNode.put(key, value)
+                        is Int -> extensionsNode.put(key, value)
+                        is Long -> extensionsNode.put(key, value)
+                    }
+                }
+                objectNode.set<JsonNode>("extensions", extensionsNode)
+            }
+            objectNode
+        }
+    }
+
+    private suspend fun <T> handleProperty(
+        ctx: ExecutionContext,
+        value: T,
+        child: Execution,
+        type: Type,
+        childrenSize: Int
+    ): Pair<String, JsonNode?> {
         when (child) {
             //Union is subclass of Node so check it first
             is Execution.Union -> {
                 val field = type.unwrapped()[child.key]
-                        ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
+                    ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
                 if (field is Field.Union<*>) {
                     return child.aliasOrKey to createUnionOperationNode(ctx, value, child, field as Field.Union<T>)
                 } else {
@@ -207,7 +296,11 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    private suspend fun <T> handleFragment(ctx: ExecutionContext, value: T, container: Execution.Fragment): Map<String, JsonNode?> {
+    private suspend fun <T> handleFragment(
+        ctx: ExecutionContext,
+        value: T,
+        container: Execution.Fragment
+    ): Map<String, JsonNode?> {
         val expectedType = container.condition.type
         val include = determineInclude(ctx, container)
 
@@ -234,7 +327,13 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         return emptyMap()
     }
 
-    private suspend fun <T> createPropertyNode(ctx: ExecutionContext, parentValue: T, node: Execution.Node, field: Field, parentTimes: Int): JsonNode? {
+    private suspend fun <T> createPropertyNode(
+        ctx: ExecutionContext,
+        parentValue: T,
+        node: Execution.Node,
+        field: Field,
+        parentTimes: Int
+    ): JsonNode? {
         val include = determineInclude(ctx, node)
         node.field.checkAccess(parentValue, ctx.requestContext)
 
@@ -275,7 +374,12 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         }
     }
 
-    private suspend fun <T> handleDataProperty(ctx: ExecutionContext, parentValue: T, node: Execution.Node, field: Field.DataLoader<*, *, *>): JsonNode {
+    private suspend fun <T> handleDataProperty(
+        ctx: ExecutionContext,
+        parentValue: T,
+        node: Execution.Node,
+        field: Field.DataLoader<*, *, *>
+    ): JsonNode {
         val preparedValue = field.kql.prepare.invoke(
             funName = field.name,
             receiver = parentValue,
@@ -293,7 +397,12 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         return createNode(ctx, value.await(), node, field.returnType)
     }
 
-    private suspend fun <T> handleFunctionProperty(ctx: ExecutionContext, parentValue: T, node: Execution.Node, field: Field.Function<*, *>): JsonNode {
+    private suspend fun <T> handleFunctionProperty(
+        ctx: ExecutionContext,
+        parentValue: T,
+        node: Execution.Node,
+        field: Field.Function<*, *>
+    ): JsonNode {
         val result = field.invoke(
             funName = field.name,
             receiver = parentValue,
@@ -316,7 +425,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                 executionNode = executionNode,
                 ctx = ctx
             )?.include
-                    ?: throw ExecutionException("Illegal directive implementation returning null result", executionNode)
+                ?: throw ExecutionException("Illegal directive implementation returning null result", executionNode)
         }?.reduce { acc, b -> acc && b } ?: true
     }
 
@@ -330,7 +439,14 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         executionNode: Execution,
         ctx: ExecutionContext
     ): T? {
-        val transformedArgs = argumentsHandler.transformArguments(funName, inputValues, args, ctx.variables, executionNode, ctx.requestContext)
+        val transformedArgs = argumentsHandler.transformArguments(
+            funName,
+            inputValues,
+            args,
+            ctx.variables,
+            executionNode,
+            ctx.requestContext
+        )
         //exceptions are not caught on purpose to pass up business logic errors
         return try {
             when {
@@ -342,7 +458,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                 else -> invoke(*transformedArgs.toTypedArray())
             }
         } catch (e: Throwable) {
-            if (schema.configuration.wrapErrors && e !is GraphQLError ) {
+            if (schema.configuration.wrapErrors && e !is GraphQLError) {
                 throw GraphQLError(e.message ?: "", nodes = listOf(executionNode.selectionNode), originalError = e)
             } else throw e
         }

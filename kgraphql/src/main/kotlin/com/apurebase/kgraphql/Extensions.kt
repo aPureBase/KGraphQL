@@ -1,8 +1,11 @@
 package com.apurebase.kgraphql
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
@@ -13,9 +16,9 @@ internal fun <T : Any> KClass<T>.defaultKQLTypeName() = this.simpleName!!
 
 internal fun KType.defaultKQLTypeName() = this.jvmErasure.defaultKQLTypeName()
 
-internal fun String.dropQuotes() : String = if(isLiteral()) drop(1).dropLast(1) else this
+internal fun String.dropQuotes(): String = if (isLiteral()) drop(1).dropLast(1) else this
 
-internal fun String.isLiteral() : Boolean = startsWith('\"') && endsWith('\"')
+internal fun String.isLiteral(): Boolean = startsWith('\"') && endsWith('\"')
 
 internal fun KParameter.isNullable() = type.isMarkedNullable
 
@@ -32,7 +35,6 @@ internal fun KType.getIterableElementType(): KType? {
 
 
 internal fun not(boolean: Boolean) = !boolean
-
 
 
 internal suspend fun <T, R> Collection<T>.toMapAsync(

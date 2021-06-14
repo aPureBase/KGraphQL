@@ -1,11 +1,13 @@
 package com.apurebase.kgraphql.schema.dsl
 
 import com.apurebase.kgraphql.configuration.PluginConfiguration
+import com.apurebase.kgraphql.configuration.SchemaConfiguration
+import com.apurebase.kgraphql.schema.execution.DefaultErrorFunction
+import com.apurebase.kgraphql.schema.execution.ErrorFunction
+import com.apurebase.kgraphql.schema.execution.Executor
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.apurebase.kgraphql.configuration.SchemaConfiguration
-import com.apurebase.kgraphql.schema.execution.Executor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlin.reflect.KClass
@@ -20,6 +22,7 @@ open class SchemaConfigurationDSL {
     var wrapErrors: Boolean = true
     var executor: Executor = Executor.Parallel
     var timeout: Long? = null
+    var errorFunction: ErrorFunction = DefaultErrorFunction()
 
     private val plugins: MutableMap<KClass<*>, Any> = mutableMapOf()
 
@@ -42,7 +45,9 @@ open class SchemaConfigurationDSL {
             wrapErrors,
             executor,
             timeout,
-            plugins
+            plugins,
+            errorFunction
         )
     }
+
 }
