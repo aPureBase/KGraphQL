@@ -10,7 +10,6 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.*
 import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.json.*
 import kotlinx.serialization.json.Json.Default.decodeFromString
 
 class GraphQL(val schema: Schema) {
@@ -26,6 +25,11 @@ class GraphQL(val schema: Schema) {
         var playground: Boolean = false
 
         var endpoint: String = "/graphql"
+
+        /**
+         * Change 2: Added debug option to GraphQL Configuration (flag to output exception information to extensions)
+         */
+        var debug: Boolean = false
 
         fun context(block: ContextBuilder.(ApplicationCall) -> Unit) {
             contextSetup = block
@@ -83,31 +87,12 @@ class GraphQL(val schema: Schema) {
                     }
                 } catch (e: Throwable) {
                     if (e is GraphQLError) {
-                        context.respond(HttpStatusCode.OK, e.serialize())
+                        context.respond(HttpStatusCode.OK, e.serialize(config.debug))
                     } else throw e
                 }
             }
             return GraphQL(schema)
         }
-
-        private fun GraphQLError.serialize(): String = buildJsonObject {
-            put("errors", buildJsonArray {
-                addJsonObject {
-                    put("message", message)
-                    put("locations", buildJsonArray {
-                        locations?.forEach {
-                            addJsonObject {
-                                put("line", it.line)
-                                put("column", it.column)
-                            }
-                        }
-                    })
-                    put("path", buildJsonArray {
-                        // TODO: Build this path. https://spec.graphql.org/June2018/#example-90475
-                    })
-                }
-            })
-        }.toString()
     }
 
 }

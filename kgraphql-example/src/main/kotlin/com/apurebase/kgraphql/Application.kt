@@ -23,6 +23,10 @@ fun Application.module() {
     install(GraphQL) {
         useDefaultPrettyPrinter = true
         playground = true
+        /**
+         * Change 2: Added debug option to GraphQL Configuration (flag to output exception information to extensions)
+         */
+        debug = false
         endpoint = "/"
 
         wrap {

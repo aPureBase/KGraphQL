@@ -1,8 +1,10 @@
 package com.apurebase.kgraphql
 
+import com.apurebase.kgraphql.helpers.toJsonElement
 import com.apurebase.kgraphql.schema.model.ast.ASTNode
 import com.apurebase.kgraphql.schema.model.ast.Location.Companion.getLocation
 import com.apurebase.kgraphql.schema.model.ast.Source
+import kotlinx.serialization.json.*
 
 open class GraphQLError(
 
@@ -33,10 +35,19 @@ open class GraphQLError(
     /**
      * The original error thrown from a field resolver during execution.
      */
-    val originalError: Throwable? = null
+    val originalError: Throwable? = null,
+
+    /**
+     * Change 1: Added extensions to the error response.
+     */
+    val extensionsErrorType: String? = "INTERNAL_SERVER_ERROR",
+    val extensionsErrorDetail: Map<String, Any?>? = null
 ) : Exception(message) {
 
     constructor(message: String, node: ASTNode?) : this(message, nodes = node?.let(::listOf))
+    constructor(message: String, extensionsErrorType: String?,extensionsErrorDetail:Map<String, Any?>?) : this(message,null,null,null,null,extensionsErrorType,extensionsErrorDetail )
+    constructor(message: String, extensionsErrorType: String?) : this(message,null,null,null,null,extensionsErrorType )
+
 
     /**
      * An array of { line, column } locations within the source GraphQL document
@@ -71,4 +82,69 @@ open class GraphQLError(
 
         return output
     }
+
+    /**
+     * Change 1: Added extensions to the error response.
+     * Change 2: Added debug option to GraphQL Configuration (flag to output exception information to extensions)
+     * Change 3: Moved serialize (), which was defined as an extension of GraphQLError, into GraphQLError. option
+     */
+    open val extensions: Map<String,Any?>?by lazy {
+        val extensions = mutableMapOf<String,Any?>()
+        extensionsErrorType?.let{  extensions.put("type",extensionsErrorType) }
+        extensionsErrorDetail?.let { extensions.put("detail",extensionsErrorDetail) }
+        extensions
+    }
+
+    open fun extensionsDebug(): Map<String,Any?> {
+        val extensions = mutableMapOf<String,Any?>()
+        extensionsErrorType?.let{  extensions.put("type",extensionsErrorType) }
+        extensionsErrorDetail?.let { extensions.put("detail",extensionsErrorDetail) }
+        extensions.put("debug",this.debugInfo())
+        return extensions
+    }
+
+    open fun debugInfo(): Map<String,Any?> {
+        val exception = mutableMapOf<String,Any?>()
+        val stackList = this.stackTrace
+        if (!stackList[0].fileName.isNullOrEmpty()) {
+            exception.put("fileName",stackList[0].fileName)
+            exception.put("line",stackList[0].lineNumber.toString())
+        }
+        if (!stackList[0].methodName.isNullOrEmpty()) {
+            exception.put("method",stackList[0].methodName)
+        }
+        if (!stackList[0].className.isNullOrEmpty()) {
+            exception.put("classPath", stackList[0].className)
+        }
+        exception.put("stackTrace", stackList)
+        return  exception
+    }
+
+    open fun serialize(debug:Boolean=false): String = buildJsonObject {
+        put("errors", buildJsonArray {
+            addJsonObject {
+                put("message", message)
+                put("locations", buildJsonArray {
+                    locations?.forEach {
+                        addJsonObject {
+                            put("liane", it.line)
+                            put("column", it.column)
+                        }
+                    }
+                })
+                put("path", buildJsonArray {
+                    // TODO: Build this path. https://spec.graphql.org/June2018/#example-90475
+                })
+                if (!debug) {
+                    extensions?.let {
+                        put("extensions", it.toJsonElement())
+                    }
+                } else {
+                    extensionsDebug().let {
+                        put("extensions", it.toJsonElement())
+                    }
+                }
+            }
+        })
+    }.toString()
 }
