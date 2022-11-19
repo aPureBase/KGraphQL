@@ -12,6 +12,7 @@ val kotlin_version: String by project
 val serialization_version: String by project
 val coroutine_version: String by project
 val jackson_version: String by project
+val reflect_version: String by project
 
 val netty_version: String by project
 val hamcrest_version: String by project
@@ -21,7 +22,7 @@ val junit_version: String by project
 val isReleaseVersion = !version.toString().endsWith("SNAPSHOT")
 
 dependencies {
-    implementation(kotlin("reflect"))
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$reflect_version")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutine_version")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version") // JVM dependency
