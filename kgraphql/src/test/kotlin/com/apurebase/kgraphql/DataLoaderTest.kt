@@ -118,7 +118,7 @@ class DataLoaderTest {
                         println("== Running [B] loader with keys: $keys ==")
                         counters.abcB.loader.incrementAndGet()
                         keys.map {
-                            ExecutionResult.Success(it.map(Char::toInt).fold(0) { a, b -> a + b })
+                            ExecutionResult.Success(it.map(Char::code).fold(0) { a, b -> a + b })
                         }
                     }
                     prepare { parent: ABC ->

@@ -93,7 +93,7 @@ data class Lexer(
             )
         }
 
-        return when (val code = body[pos].toInt()) {
+        return when (val code = body[pos].code) {
             // !
             33 -> tok(BANG)
             // #
@@ -107,7 +107,7 @@ data class Lexer(
             // )
             41 -> tok(PAREN_R)
             // .
-            46 -> if (body.getOrNull(pos + 1)?.toInt() == 46 && body.getOrNull(pos + 2)?.toInt() == 46) {
+            46 -> if (body.getOrNull(pos + 1)?.code == 46 && body.getOrNull(pos + 2)?.code == 46) {
                 tok(SPREAD, start = pos, end = pos + 3)
             } else fail(code)
             // :
@@ -132,7 +132,7 @@ data class Lexer(
             45, in (48..57) -> readNumber(pos, code, col, prev)
             // "
             34 -> {
-                if (body.getOrNull(pos + 1)?.toInt() == 34 && body.getOrNull(pos + 2)?.toInt() == 34)
+                if (body.getOrNull(pos + 1)?.code == 34 && body.getOrNull(pos + 2)?.code == 34)
                     readBlockString(pos, col, prev)
                 else readString(pos, col, prev)
             }
@@ -149,7 +149,7 @@ data class Lexer(
         val bodyLength = body.length
         var position = startPosition
         while (position < bodyLength) {
-            val code = body[position].toInt()
+            val code = body[position].code
             // tab | space | comma | BOM
             if (code == 9 || code == 32 || code == 44 || code == 0xfeff) {
                 ++position;
@@ -160,7 +160,7 @@ data class Lexer(
                 lineStart = position
             } else if (code == 13) {
                 // carriage return
-                if (body[position + 1].toInt() == 10) {
+                if (body[position + 1].code == 10) {
                     position += 2
                 } else {
                     ++position
@@ -210,7 +210,7 @@ data class Lexer(
         val body = source.body
         val bodyLength = body.length
         var position = start
-        var code = body.getOrNull(position + 1)?.toInt()
+        var code = body.getOrNull(position + 1)?.code
 
         while (code != null && (code == 95 || // -
                     (code in 48..57) || // 0-9
@@ -218,7 +218,7 @@ data class Lexer(
                     (code in 97..122)   // a-z
                     )
         ) {
-            code = body.getOrNull(++position + 1)?.toInt()
+            code = body.getOrNull(++position + 1)?.code
         }
 
         return Token(
@@ -247,12 +247,12 @@ data class Lexer(
 
         if (code == 45) {
             // -
-            code = body.getOrNull(++position)?.toInt()
+            code = body.getOrNull(++position)?.code
         }
 
         if (code == 48) {
             // 0
-            code = body.getOrNull(++position)?.toInt()
+            code = body.getOrNull(++position)?.code
             if (code in 48..57) {
                 throw syntaxError(
                     source,
@@ -262,29 +262,29 @@ data class Lexer(
             }
         } else {
             position = readDigits(position, code)
-            code = body.getOrNull(position)?.toInt()
+            code = body.getOrNull(position)?.code
         }
 
         if (code == 46) {
             // .
             isFloat = true
 
-            code = body.getOrNull(++position)?.toInt()
+            code = body.getOrNull(++position)?.code
             position = readDigits(position, code)
-            code = body.getOrNull(position)?.toInt()
+            code = body.getOrNull(position)?.code
         }
 
         if (code == 69 || code == 101) {
             // E e
             isFloat = true
 
-            code = body.getOrNull(++position)?.toInt()
+            code = body.getOrNull(++position)?.code
             if (code == 43 || code == 45) {
                 // + -
-                code = body.getOrNull(++position)?.toInt()
+                code = body.getOrNull(++position)?.code
             }
             position = readDigits(position, code)
-            code = body.getOrNull(position)?.toInt()
+            code = body.getOrNull(position)?.code
         }
 
         // Numbers cannot be followed by . or NameStart
@@ -317,7 +317,7 @@ data class Lexer(
         if (code in 48..57) {
             // 0 - 9
             do {
-                code = body.getOrNull(++position)?.toInt()
+                code = body.getOrNull(++position)?.code
             } while (code in 48..57) // 0 - 9
             return position
         }
@@ -341,7 +341,7 @@ data class Lexer(
         var value = ""
 
         while (position < body.length) {
-            code = body.getOrNull(position)?.toInt() ?: break
+            code = body.getOrNull(position)?.code ?: break
             // not LineTerminator
             if (code == 0x00a || code == 0x00d) break
 
@@ -372,7 +372,7 @@ data class Lexer(
             if (code == 92) {
                 // \
                 value += body.substring(chunkStart, position - 1)
-                code = body[position].toInt()
+                code = body[position].code
                 when (code) {
                     34 -> value += '"'
                     47 -> value += '/'
@@ -385,10 +385,10 @@ data class Lexer(
                     117 -> {
                         // uXXXX
                         val charCode = uniCharCode(
-                            body[position + 1].toInt(),
-                            body[position + 2].toInt(),
-                            body[position + 3].toInt(),
-                            body[position + 4].toInt()
+                            body[position + 1].code,
+                            body[position + 2].code,
+                            body[position + 3].code,
+                            body[position + 4].code
                         )
                         if (charCode < 0) {
                             val invalidSequence = body.substring(position + 1, position + 5)
@@ -434,12 +434,12 @@ data class Lexer(
         var rawValue = ""
 
         while (position < body.length && code != null) {
-            code = body.getOrNull(position)?.toInt() ?: break
+            code = body.getOrNull(position)?.code ?: break
             // Closing Triple-Quote (""")
             if (
                 code == 34 &&
-                body.getOrNull(position + 1)?.toInt() == 34 &&
-                body.getOrNull(position + 2)?.toInt() == 34
+                body.getOrNull(position + 1)?.code == 34 &&
+                body.getOrNull(position + 2)?.code == 34
             ) {
                 rawValue += body.substring(chunkStart, position)
                 return Token(
@@ -472,15 +472,15 @@ data class Lexer(
                 ++line
                 lineStart = position
             } else if (code == 13) {
-                position += if (body.getOrNull(position + 1)?.toInt() == 10) 2 else 1
+                position += if (body.getOrNull(position + 1)?.code == 10) 2 else 1
                 ++line
                 lineStart = position
             } else if (
             // Escape Triple-Quote (\""")
                 code == 92 &&
-                body.getOrNull(position + 1)?.toInt() == 34 &&
-                body.getOrNull(position + 2)?.toInt() == 34 &&
-                body.getOrNull(position + 3)?.toInt() == 34
+                body.getOrNull(position + 1)?.code == 34 &&
+                body.getOrNull(position + 2)?.code == 34 &&
+                body.getOrNull(position + 3)?.code == 34
             ) {
                 rawValue += body.substring(chunkStart, position) + "\"\"\""
                 position += 4
@@ -545,7 +545,7 @@ data class Lexer(
                         for (i in hex.length..3) {
                             append('0')
                         }
-                        append(hex.toUpperCase())
+                        append(hex.uppercase())
                     }
             }
             append("\"")
