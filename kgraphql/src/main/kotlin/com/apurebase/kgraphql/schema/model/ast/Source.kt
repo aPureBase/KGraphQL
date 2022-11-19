@@ -69,7 +69,7 @@ data class Source(
     private fun printPrefixedLines(lines: List<List<String?>>): String {
         val existingLines = lines.filter { it.getOrNull(1) != null }
 
-        val padLen = existingLines.map { it[0]?.length ?: error("item line length is null") }.maxOrNull()
+        val padLen = existingLines.maxOfOrNull { it[0]?.length ?: error("item line length is null") }
             ?: error("line is null")
         return existingLines.joinToString("\n") {
             lpad(padLen, it[0]!!) + if (it.getOrNull(1).isNullOrBlank()) " |" else " | " + it[1]

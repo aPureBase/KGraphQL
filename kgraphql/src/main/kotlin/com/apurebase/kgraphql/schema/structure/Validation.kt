@@ -34,7 +34,7 @@ fun Field.validateArguments(selectionArgs: List<ArgumentNode>?, parentTypeName: 
     val parameterNames = arguments.map { it.name }
     val invalidArguments = selectionArgs?.filter { it.name.value !in parameterNames }
 
-    if (invalidArguments != null && invalidArguments.isNotEmpty()) {
+    if (!invalidArguments.isNullOrEmpty()) {
         exceptions.add(
             ValidationException(
                 message = "$name does support arguments ${arguments.map { it.name }}. " +

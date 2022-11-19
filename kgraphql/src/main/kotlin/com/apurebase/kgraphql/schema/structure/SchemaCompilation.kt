@@ -197,10 +197,10 @@ class SchemaCompilation(
     }
 
     private fun applyNullability(kType: KType, simpleType: Type): Type {
-        if (!kType.isMarkedNullable) {
-            return Type.NonNull(simpleType)
+        return if (!kType.isMarkedNullable) {
+            Type.NonNull(simpleType)
         } else {
-            return simpleType
+            simpleType
         }
     }
 

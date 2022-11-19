@@ -32,7 +32,7 @@ open class ArgumentTransformer(val schema: DefaultSchema) {
                     value
                 )
                 val params = constructor.parameters.associateBy { it.name }
-                val valueMap = value.fields.map { valueField ->
+                val valueMap = value.fields.associate { valueField ->
                     val inputField = type
                         .unwrapped()
                         .inputFields
@@ -50,7 +50,7 @@ open class ArgumentTransformer(val schema: DefaultSchema) {
                         )
 
                     params.getValue(valueField.name.value) to transformValue(paramType, valueField.value, variables)
-                }.toMap()
+                }
 
                 val missingNonOptionalInputs = params.values
                     .filter { !it.isOptional && !valueMap.containsKey(it) }

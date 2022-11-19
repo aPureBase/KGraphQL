@@ -148,7 +148,7 @@ data class MutableSchemaDefinition(
     }
 
     private fun Definition.checkEqualName(vararg collections: List<Definition>): Boolean {
-        return collections.fold(false, { acc, list -> acc || list.any { it.equalName(this) } })
+        return collections.fold(false) { acc, list -> acc || list.any { it.equalName(this) } }
     }
 
     private fun Definition.equalName(other: Definition): Boolean {
@@ -197,5 +197,5 @@ private fun create__DirectiveDefinition() = TypeDSL(
     }
 }.toKQLObject()
 
-private fun <T> List<T>.containsAny(vararg elements: T) = elements.filter { this.contains(it) }.any()
+private fun <T> List<T>.containsAny(vararg elements: T) = elements.any { this.contains(it) }
 

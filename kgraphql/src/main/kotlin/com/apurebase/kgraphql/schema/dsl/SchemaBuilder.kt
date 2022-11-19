@@ -144,7 +144,7 @@ class SchemaBuilder internal constructor() {
     }
 
     inline fun <reified T : Any> type() {
-        type(T::class, {})
+        type(T::class) {}
     }
 
     //================================================================================
