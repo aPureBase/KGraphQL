@@ -21,7 +21,6 @@ val junit_version: String by project
 val isReleaseVersion = !version.toString().endsWith("SNAPSHOT")
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutine_version")
