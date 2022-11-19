@@ -1,14 +1,14 @@
 package com.apurebase.kgraphql.schema.scalar
 
 import com.apurebase.kgraphql.ExecutionException
+import com.apurebase.kgraphql.GraphQLError
 import com.apurebase.kgraphql.dropQuotes
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.apurebase.kgraphql.schema.builtin.*
 import com.apurebase.kgraphql.schema.execution.Execution
 import com.apurebase.kgraphql.schema.model.ast.ValueNode
 import com.apurebase.kgraphql.schema.model.ast.ValueNode.*
-import com.apurebase.kgraphql.GraphQLError
-import com.apurebase.kgraphql.schema.builtin.*
 import com.apurebase.kgraphql.schema.structure.Type
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -16,9 +16,9 @@ private typealias JsonValueNode = com.fasterxml.jackson.databind.node.ValueNode
 
 @Suppress("UNCHECKED_CAST")
 // TODO: Re-structure scalars, as it's a bit too complicated now.
-fun <T : Any> deserializeScalar(scalar: Type.Scalar<T>, value : ValueNode): T {
+fun <T : Any> deserializeScalar(scalar: Type.Scalar<T>, value: ValueNode): T {
     try {
-        return when(scalar.coercion){
+        return when (scalar.coercion) {
             //built in scalars
             STRING_COERCION -> STRING_COERCION.deserialize(value.valueNodeName, value as StringValueNode) as T
             FLOAT_COERCION -> FLOAT_COERCION.deserialize(value.valueNodeName, value) as T
@@ -50,48 +50,66 @@ fun <T : Any> deserializeScalar(scalar: Type.Scalar<T>, value : ValueNode): T {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <T> serializeScalar(jsonNodeFactory: JsonNodeFactory, scalar: Type.Scalar<*>, value: T, executionNode: Execution): JsonValueNode = when(scalar.coercion){
+fun <T> serializeScalar(
+    jsonNodeFactory: JsonNodeFactory,
+    scalar: Type.Scalar<*>,
+    value: T,
+    executionNode: Execution,
+): JsonValueNode = when (scalar.coercion) {
     is StringScalarCoercion<*> -> {
         jsonNodeFactory.textNode((scalar.coercion as StringScalarCoercion<T>).serialize(value))
     }
+
     is ShortScalarCoercion<*> -> {
         jsonNodeFactory.numberNode((scalar.coercion as ShortScalarCoercion<T>).serialize(value))
     }
+
     is IntScalarCoercion<*> -> {
         jsonNodeFactory.numberNode((scalar.coercion as IntScalarCoercion<T>).serialize(value))
     }
+
     is DoubleScalarCoercion<*> -> {
         jsonNodeFactory.numberNode((scalar.coercion as DoubleScalarCoercion<T>).serialize(value))
     }
+
     is LongScalarCoercion<*> -> {
         jsonNodeFactory.numberNode((scalar.coercion as LongScalarCoercion<T>).serialize(value))
     }
+
     is BooleanScalarCoercion<*> -> {
         jsonNodeFactory.booleanNode((scalar.coercion as BooleanScalarCoercion<T>).serialize(value))
     }
+
     else -> throw ExecutionException("Unsupported coercion for scalar type ${scalar.name}", executionNode)
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <T> serializeScalar(scalar: Type.Scalar<*>, value: T, executionNode: Execution): JsonElement = when (scalar.coercion) {
-    is StringScalarCoercion<*> -> {
-        JsonPrimitive((scalar.coercion as StringScalarCoercion<T>).serialize(value))
+fun <T> serializeScalar(scalar: Type.Scalar<*>, value: T, executionNode: Execution): JsonElement =
+    when (scalar.coercion) {
+        is StringScalarCoercion<*> -> {
+            JsonPrimitive((scalar.coercion as StringScalarCoercion<T>).serialize(value))
+        }
+
+        is ShortScalarCoercion<*> -> {
+            JsonPrimitive((scalar.coercion as ShortScalarCoercion<T>).serialize(value))
+        }
+
+        is IntScalarCoercion<*> -> {
+            JsonPrimitive((scalar.coercion as IntScalarCoercion<T>).serialize(value))
+        }
+
+        is DoubleScalarCoercion<*> -> {
+            JsonPrimitive((scalar.coercion as DoubleScalarCoercion<T>).serialize(value))
+        }
+
+        is LongScalarCoercion<*> -> {
+            JsonPrimitive((scalar.coercion as LongScalarCoercion<T>).serialize(value))
+        }
+
+        is BooleanScalarCoercion<*> -> {
+            JsonPrimitive((scalar.coercion as BooleanScalarCoercion<T>).serialize(value))
+        }
+
+        else -> throw ExecutionException("Unsupported coercion for scalar type ${scalar.name}", executionNode)
     }
-    is ShortScalarCoercion<*> -> {
-        JsonPrimitive((scalar.coercion as ShortScalarCoercion<T>).serialize(value))
-    }
-    is IntScalarCoercion<*> -> {
-        JsonPrimitive((scalar.coercion as IntScalarCoercion<T>).serialize(value))
-    }
-    is DoubleScalarCoercion<*> -> {
-        JsonPrimitive((scalar.coercion as DoubleScalarCoercion<T>).serialize(value))
-    }
-    is LongScalarCoercion<*> -> {
-        JsonPrimitive((scalar.coercion as LongScalarCoercion<T>).serialize(value))
-    }
-    is BooleanScalarCoercion<*> -> {
-        JsonPrimitive((scalar.coercion as BooleanScalarCoercion<T>).serialize(value))
-    }
-    else -> throw ExecutionException("Unsupported coercion for scalar type ${scalar.name}", executionNode)
-}
 

@@ -1,9 +1,9 @@
 package com.apurebase.kgraphql.request
 
+import com.apurebase.kgraphql.GraphQLError
 import com.apurebase.kgraphql.schema.model.ast.Source
 import com.apurebase.kgraphql.schema.model.ast.Token
 import com.apurebase.kgraphql.schema.model.ast.TokenKindEnum.*
-import com.apurebase.kgraphql.GraphQLError
 import org.amshove.kluent.*
 import org.junit.jupiter.api.Test
 
@@ -113,21 +113,25 @@ internal class LexerTest {
 
     @Test
     fun `skips whitespace and comments`() {
-        lexOne("""
+        lexOne(
+            """
 
     foo
 
 
-""") {
+"""
+        ) {
             kind shouldBeEqualTo NAME
             start shouldBeEqualTo 6
             end shouldBeEqualTo 9
             value shouldBeEqualTo "foo"
         }
-        lexOne("""
+        lexOne(
+            """
     #comment
     foo#comment
-""") {
+"""
+        ) {
             kind shouldBeEqualTo NAME
             start shouldBeEqualTo 18
             end shouldBeEqualTo 21
@@ -144,7 +148,7 @@ internal class LexerTest {
     @Test
     fun `errors respect whitespace`() {
         val result = invoking {
-            lexOne(listOf("", "","    ?", "").joinToString("\n"))
+            lexOne(listOf("", "", "    ?", "").joinToString("\n"))
         } shouldThrow GraphQLError::class
 
         result.exception.prettyPrint() shouldBeEqualTo """
@@ -451,13 +455,15 @@ internal class LexerTest {
         }
 
 
-        lexOne("""""${'"'}
+        lexOne(
+            """""${'"'}
 
         spans
           multiple
             lines
 
-        ""${'"'}""") {
+        ""${'"'}"""
+        ) {
             kind shouldBeEqualTo BLOCK_STRING
             start shouldBeEqualTo 0
             end shouldBeEqualTo 68

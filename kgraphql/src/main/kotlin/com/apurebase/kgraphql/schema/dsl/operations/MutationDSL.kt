@@ -3,7 +3,7 @@ package com.apurebase.kgraphql.schema.dsl.operations
 import com.apurebase.kgraphql.schema.model.MutationDef
 
 class MutationDSL(
-    name: String
+    name: String,
 ) : AbstractOperationDSL(name) {
 
 

@@ -1,7 +1,6 @@
 package com.apurebase.kgraphql.schema.execution
 
 import com.apurebase.kgraphql.schema.SchemaException
-import java.util.*
 import kotlin.reflect.KType
 
 /**
@@ -25,6 +24,8 @@ open class DefaultGenericTypeResolver : GenericTypeResolver {
     override fun unbox(obj: Any): Any? = obj
 
     override fun resolveMonad(type: KType): KType =
-        throw SchemaException("Could not resolve resulting type for monad $type. " +
-                "Please provide custom GenericTypeResolver to KGraphQL configuration to register your generic types")
+        throw SchemaException(
+            "Could not resolve resulting type for monad $type. " +
+                    "Please provide custom GenericTypeResolver to KGraphQL configuration to register your generic types"
+        )
 }

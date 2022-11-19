@@ -8,17 +8,17 @@ import kotlin.reflect.KType
 
 class InputValueDSL<T : Any>(val kClass: KClass<T>, val kType: KType? = null) : DepreciableItemDSL() {
 
-    lateinit var name : String
+    lateinit var name: String
 
-    var defaultValue : T? = null
+    var defaultValue: T? = null
 
-    fun toKQLInputValue() : InputValueDef<T> = InputValueDef(
-            kClass = kClass,
-            name = name,
-            defaultValue = defaultValue,
-            isDeprecated = isDeprecated,
-            description = description,
-            deprecationReason = deprecationReason,
-            kType = kType
+    fun toKQLInputValue(): InputValueDef<T> = InputValueDef(
+        kClass = kClass,
+        name = name,
+        defaultValue = defaultValue,
+        isDeprecated = isDeprecated,
+        description = description,
+        deprecationReason = deprecationReason,
+        kType = kType
     )
 }

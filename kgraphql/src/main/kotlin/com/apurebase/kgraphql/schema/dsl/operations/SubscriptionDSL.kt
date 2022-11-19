@@ -13,7 +13,7 @@ import kotlin.reflect.full.starProjectedType
 
 
 class SubscriptionDSL(
-    name: String
+    name: String,
 ) : AbstractOperationDSL(name) {
 
     internal fun toKQLSubscription(): SubscriptionDef<out Any?> {
@@ -33,7 +33,6 @@ class SubscriptionDSL(
 }
 
 
-
 private fun <T : Any> getFieldValue(clazz: T, field: String): Any? {
     val properties = clazz.javaClass.kotlin.memberProperties
     for (p in properties) {
@@ -44,8 +43,13 @@ private fun <T : Any> getFieldValue(clazz: T, field: String): Any? {
     return null
 }
 
-fun <T : Any> subscribe(subscription: String, publisher: Publisher, output: T, function: (response: String) -> Unit): T {
-    if (!(publisher as FunctionWrapper<*>).kFunction.returnType.isSubtypeOf(output::class.starProjectedType))  
+fun <T : Any> subscribe(
+    subscription: String,
+    publisher: Publisher,
+    output: T,
+    function: (response: String) -> Unit,
+): T {
+    if (!(publisher as FunctionWrapper<*>).kFunction.returnType.isSubtypeOf(output::class.starProjectedType))
         throw SchemaException("Subscription return type must be the same as the publisher's")
     val subscriber = object : Subscriber {
         override fun setObjectWriter(objectWriter: ObjectWriter) {

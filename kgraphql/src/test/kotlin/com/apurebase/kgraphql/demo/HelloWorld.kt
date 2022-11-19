@@ -5,7 +5,7 @@ import com.apurebase.kgraphql.KGraphQL
 fun main() {
     val schema = KGraphQL.schema {
         query("hello") {
-            resolver { name : String -> "Hello, $name" }
+            resolver { name: String -> "Hello, $name" }
         }
     }
 

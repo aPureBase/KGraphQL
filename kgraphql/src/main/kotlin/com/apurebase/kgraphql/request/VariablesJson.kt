@@ -18,7 +18,7 @@ import kotlin.reflect.jvm.jvmErasure
  */
 interface VariablesJson {
 
-    fun <T : Any> get(kClass: KClass<T>, kType: KType, key : NameNode) : T?
+    fun <T : Any> get(kClass: KClass<T>, kType: KType, key: NameNode): T?
 
     class Empty : VariablesJson {
         override fun <T : Any> get(kClass: KClass<T>, kType: KType, key: NameNode): T? {
@@ -28,18 +28,18 @@ interface VariablesJson {
 
     class Defined(val objectMapper: ObjectMapper, val json: JsonNode) : VariablesJson {
 
-        constructor(objectMapper: ObjectMapper, json : String) : this(objectMapper, objectMapper.readTree(json))
+        constructor(objectMapper: ObjectMapper, json: String) : this(objectMapper, objectMapper.readTree(json))
 
         /**
          * map and return object of requested class
          */
-        override fun <T : Any>get(kClass: KClass<T>, kType: KType, key : NameNode) : T? {
+        override fun <T : Any> get(kClass: KClass<T>, kType: KType, key: NameNode): T? {
             require(kClass == kType.jvmErasure) { "kClass and KType must represent same class" }
             return json.let { node -> node[key.value] }?.let { tree ->
                 try {
                     // Calling [toString] as a hack for now. TODO: Move away from jackson and only depend on kotlinx.serialization
                     objectMapper.readValue<T>(tree.toString(), kType.toTypeReference())
-                } catch(e : Exception) {
+                } catch (e: Exception) {
                     throw if (e is GraphQLError) e
                     else ExecutionException("Failed to coerce $tree as $kType", key, e)
                 }
@@ -48,7 +48,7 @@ interface VariablesJson {
     }
 
     fun KType.toTypeReference(): JavaType {
-        return if(jvmErasure.isIterable()) {
+        return if (jvmErasure.isIterable()) {
             val elementType = getIterableElementType()
                 ?: throw ExecutionException("Cannot handle collection without element type")
 

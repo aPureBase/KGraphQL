@@ -2,14 +2,13 @@ package com.apurebase.kgraphql.schema.dsl
 
 import com.apurebase.kgraphql.Context
 import com.apurebase.kgraphql.schema.model.PropertyDef
-import java.lang.IllegalArgumentException
 import kotlin.reflect.KProperty1
 
 
-class KotlinPropertyDSL<T : Any, R> (
-        private val kProperty: KProperty1<T, R>,
-        block : KotlinPropertyDSL<T, R>.() -> Unit
-) : LimitedAccessItemDSL<T>(){
+class KotlinPropertyDSL<T : Any, R>(
+    private val kProperty: KProperty1<T, R>,
+    block: KotlinPropertyDSL<T, R>.() -> Unit,
+) : LimitedAccessItemDSL<T>() {
 
     var ignore = false
 
@@ -17,21 +16,24 @@ class KotlinPropertyDSL<T : Any, R> (
         block()
     }
 
-    fun accessRule(rule: (T, Context) -> Exception?){
+    fun accessRule(rule: (T, Context) -> Exception?) {
 
         val accessRuleAdapter: (T?, Context) -> Exception? = { parent, ctx ->
-            if (parent != null) rule(parent, ctx) else IllegalArgumentException("Unexpected null parent of kotlin property")
+            if (parent != null) rule(
+                parent,
+                ctx
+            ) else IllegalArgumentException("Unexpected null parent of kotlin property")
         }
 
         this.accessRuleBlock = accessRuleAdapter
     }
 
-    fun toKQLProperty() = PropertyDef.Kotlin (
-            kProperty = kProperty,
-            description = description,
-            isDeprecated = isDeprecated,
-            deprecationReason = deprecationReason,
-            isIgnored = ignore,
-            accessRule = accessRuleBlock
+    fun toKQLProperty() = PropertyDef.Kotlin(
+        kProperty = kProperty,
+        description = description,
+        isDeprecated = isDeprecated,
+        deprecationReason = deprecationReason,
+        isIgnored = ignore,
+        accessRule = accessRuleBlock
     )
 }

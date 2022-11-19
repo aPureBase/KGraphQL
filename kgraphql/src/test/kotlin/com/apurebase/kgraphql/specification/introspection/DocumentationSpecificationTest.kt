@@ -11,12 +11,12 @@ import org.junit.jupiter.api.Test
 class DocumentationSpecificationTest {
 
     @Test
-    fun `queries may be documented`(){
+    fun `queries may be documented`() {
         val expected = "sample query"
         val schema = defaultSchema {
-            query("sample"){
-                description  = expected
-                resolver<String> {"SAMPLE"}
+            query("sample") {
+                description = expected
+                resolver<String> { "SAMPLE" }
             }
         }
 
@@ -25,12 +25,12 @@ class DocumentationSpecificationTest {
     }
 
     @Test
-    fun `mutations may be documented`(){
+    fun `mutations may be documented`() {
         val expected = "sample mutation"
         val schema = defaultSchema {
-            mutation("sample"){
-                description  = expected
-                resolver<String> {"SAMPLE"}
+            mutation("sample") {
+                description = expected
+                resolver<String> { "SAMPLE" }
             }
         }
 
@@ -38,16 +38,16 @@ class DocumentationSpecificationTest {
         assertThat(response.extract("data/__schema/mutationType/fields[0]/description"), equalTo(expected))
     }
 
-    data class Sample(val content : String)
+    data class Sample(val content: String)
 
     @Test
-    fun `object type may be documented`(){
+    fun `object type may be documented`() {
         val expected = "sample type"
         val schema = defaultSchema {
-            query("sample"){
-                resolver<Sample>{ Sample("SAMPLE") }
+            query("sample") {
+                resolver<Sample> { Sample("SAMPLE") }
             }
-            type<Sample>{
+            type<Sample> {
                 description = expected
             }
         }
@@ -57,14 +57,14 @@ class DocumentationSpecificationTest {
     }
 
     @Test
-    fun `input type may be documented`(){
+    fun `input type may be documented`() {
         val expected = "sample type"
         val schema = defaultSchema {
-            query("sample"){
-                resolver<String> {"SAMPLE"}
+            query("sample") {
+                resolver<String> { "SAMPLE" }
             }
 
-            inputType<Sample>{
+            inputType<Sample> {
                 description = expected
             }
         }
@@ -74,14 +74,14 @@ class DocumentationSpecificationTest {
     }
 
     @Test
-    fun `kotlin field may be documented`(){
+    fun `kotlin field may be documented`() {
         val expected = "sample type"
         val schema = defaultSchema {
-            query("sample"){
-                resolver<String> {"SAMPLE"}
+            query("sample") {
+                resolver<String> { "SAMPLE" }
             }
 
-            type<Sample>{
+            type<Sample> {
                 Sample::content.configure {
                     description = expected
                 }
@@ -93,17 +93,17 @@ class DocumentationSpecificationTest {
     }
 
     @Test
-    fun `extension field may be documented`(){
+    fun `extension field may be documented`() {
         val expected = "sample type"
         val schema = defaultSchema {
-            query("sample"){
-                resolver<String> {"SAMPLE"}
+            query("sample") {
+                resolver<String> { "SAMPLE" }
             }
 
-            type<Sample>{
-                property<String>("add"){
+            type<Sample> {
+                property<String>("add") {
                     description = expected
-                    resolver{ (content) -> content.toUpperCase() }
+                    resolver { (content) -> content.toUpperCase() }
                 }
             }
         }
@@ -116,21 +116,22 @@ class DocumentationSpecificationTest {
     enum class SampleEnum { ONE, TWO, THREE }
 
     @Test
-    fun `enum value may be documented`(){
+    fun `enum value may be documented`() {
         val expected = "some enum value"
         val schema = defaultSchema {
-            query("sample"){
-                resolver<String> {"SAMPLE"}
+            query("sample") {
+                resolver<String> { "SAMPLE" }
             }
 
             enum<SampleEnum> {
-                value(SampleEnum.ONE){
+                value(SampleEnum.ONE) {
                     description = expected
                 }
             }
         }
 
-        val response = deserialize(schema.executeBlocking("{__type(name: \"SampleEnum\"){enumValues{name, description}}}"))
+        val response =
+            deserialize(schema.executeBlocking("{__type(name: \"SampleEnum\"){enumValues{name, description}}}"))
         assertThat(response.extract("data/__type/enumValues[0]/name"), equalTo(SampleEnum.ONE.name))
         assertThat(response.extract("data/__type/enumValues[0]/description"), equalTo(expected))
     }

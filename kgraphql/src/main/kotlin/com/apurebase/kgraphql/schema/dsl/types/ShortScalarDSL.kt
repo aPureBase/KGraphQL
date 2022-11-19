@@ -3,8 +3,8 @@ package com.apurebase.kgraphql.schema.dsl.types
 
 import com.apurebase.kgraphql.schema.SchemaException
 import com.apurebase.kgraphql.schema.model.ast.ValueNode
-import com.apurebase.kgraphql.schema.scalar.ShortScalarCoercion
 import com.apurebase.kgraphql.schema.scalar.ScalarCoercion
+import com.apurebase.kgraphql.schema.scalar.ShortScalarCoercion
 import kotlin.reflect.KClass
 
 

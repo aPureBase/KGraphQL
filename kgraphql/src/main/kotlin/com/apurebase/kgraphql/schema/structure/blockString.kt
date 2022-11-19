@@ -72,7 +72,7 @@ internal fun isBlank(str: String) = leadingWhitespace(str) == str.length
 internal fun printBlockString(
     value: String,
     indentation: String? = "",
-    preferMultipleLines: Boolean = false
+    preferMultipleLines: Boolean = false,
 ): String {
     val isSingleLine = value.indexOf('\n') == -1
     val hasLeadingSpace = value[0] == ' ' || value[0] == '\t'

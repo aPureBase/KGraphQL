@@ -14,13 +14,13 @@ interface Schema : __Schema {
         @Language("graphql") request: String,
         variables: String? = null,
         context: Context = Context(emptyMap()),
-        options: ExecutionOptions = ExecutionOptions()
-    ) : String
+        options: ExecutionOptions = ExecutionOptions(),
+    ): String
 
     fun executeBlocking(
         @Language("graphql") request: String,
         variables: String? = null,
         context: Context = Context(emptyMap()),
-        options: ExecutionOptions = ExecutionOptions()
+        options: ExecutionOptions = ExecutionOptions(),
     ) = runBlocking { execute(request, variables, context, options) }
 }

@@ -1,9 +1,11 @@
 package com.apurebase.kgraphql.specification.introspection
 
-import com.apurebase.kgraphql.*
+import com.apurebase.kgraphql.GraphQLError
+import com.apurebase.kgraphql.defaultSchema
+import com.apurebase.kgraphql.deserialize
+import com.apurebase.kgraphql.extract
 import com.apurebase.kgraphql.integration.BaseSchemaTest.Companion.INTROSPECTION_QUERY
 import com.apurebase.kgraphql.schema.introspection.TypeKind
-import com.apurebase.kgraphql.GraphQLError
 import org.amshove.kluent.*
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
@@ -13,9 +15,9 @@ import org.junit.jupiter.api.Test
 class IntrospectionSpecificationTest {
 
     @Test
-    fun `simple introspection`(){
+    fun `simple introspection`() {
         val schema = defaultSchema {
-            query("sample"){
+            query("sample") {
                 resolver { -> "Ronaldinho" }
             }
         }
@@ -23,13 +25,13 @@ class IntrospectionSpecificationTest {
         assertThat(schema.findTypeByName("String"), notNullValue())
     }
 
-    data class Data(val string : String)
+    data class Data(val string: String)
 
     @Test
-    fun `__typename field can be used to obtain type of object`(){
+    fun `__typename field can be used to obtain type of object`() {
         val schema = defaultSchema {
-            query("sample"){
-                resolver { -> Data("Ronaldingo")}
+            query("sample") {
+                resolver { -> Data("Ronaldingo") }
             }
         }
 
@@ -38,10 +40,10 @@ class IntrospectionSpecificationTest {
     }
 
     @Test
-    fun `__typename field cannot be used on scalars`(){
+    fun `__typename field cannot be used on scalars`() {
         val schema = defaultSchema {
-            query("sample"){
-                resolver { -> Data("Ronaldingo")}
+            query("sample") {
+                resolver { -> Data("Ronaldingo") }
             }
         }
 
@@ -50,46 +52,49 @@ class IntrospectionSpecificationTest {
         } shouldThrow GraphQLError::class withMessage "Property __typename on String does not exist"
     }
 
-    data class Union1(val one : String)
+    data class Union1(val one: String)
 
-    data class Union2(val two : String)
+    data class Union2(val two: String)
 
     @Test
-    fun `__typaname field can be used to obtain type of union member in runtime`(){
+    fun `__typaname field can be used to obtain type of union member in runtime`() {
         val schema = defaultSchema {
-            type<Data>{
-                unionProperty("union"){
-                    returnType = unionType("UNION"){
+            type<Data> {
+                unionProperty("union") {
+                    returnType = unionType("UNION") {
                         type<Union1>()
                         type<Union2>()
                     }
 
-                    resolver { (string) -> if(string.isEmpty()) Union1("!!") else Union2("??") }
+                    resolver { (string) -> if (string.isEmpty()) Union1("!!") else Union2("??") }
                 }
             }
 
-            query("data"){
+            query("data") {
                 resolver { input: String -> Data(input) }
             }
         }
 
-        val response = deserialize(schema.executeBlocking(
+        val response = deserialize(
+            schema.executeBlocking(
                 "{data(input: \"\"){" +
                         "string, " +
                         "union{" +
-                            "... on Union1{one, __typename} " +
-                            "... on Union2{two}" +
+                        "... on Union1{one, __typename} " +
+                        "... on Union2{two}" +
                         "}" +
-                "}}"))
+                        "}}"
+            )
+        )
 
         assertThat(response.extract("data/data/union/__typename"), equalTo("Union1"))
     }
 
     @Test
-    fun `list and nonnull types are wrapping regular types in introspection system`(){
+    fun `list and nonnull types are wrapping regular types in introspection system`() {
         val schema = defaultSchema {
-            query("data"){
-                resolver{ -> listOf("BABA") }
+            query("data") {
+                resolver { -> listOf("BABA") }
             }
         }
 
@@ -100,10 +105,10 @@ class IntrospectionSpecificationTest {
     }
 
     @Test
-    fun `field __schema is accessible from the type of the root of a query operation`(){
+    fun `field __schema is accessible from the type of the root of a query operation`() {
         val schema = defaultSchema {
-            query("data"){
-                resolver<String>{ "DADA" }
+            query("data") {
+                resolver<String> { "DADA" }
             }
         }
 
@@ -112,10 +117,10 @@ class IntrospectionSpecificationTest {
     }
 
     @Test
-    fun `field __types is accessible from the type of the root of a query operation`(){
+    fun `field __types is accessible from the type of the root of a query operation`() {
         val schema = defaultSchema {
-            query("data"){
-                resolver<String>{ "DADA" }
+            query("data") {
+                resolver<String> { "DADA" }
             }
         }
 
@@ -124,18 +129,18 @@ class IntrospectionSpecificationTest {
         assertThat(response.extract("data/__type/kind"), equalTo("SCALAR"))
     }
 
-    data class IntString(val int : Int, val string: String)
+    data class IntString(val int: Int, val string: String)
 
     @Test
-    fun `operation args are introspected`(){
+    fun `operation args are introspected`() {
         val schema = defaultSchema {
-            query("data"){
+            query("data") {
                 resolver { int: Int, string: String -> IntString(int, string) }
             }
         }
 
         val inputValues = schema.queryType.fields?.first()?.args
-                ?: throw AssertionError("Expected non null field")
+            ?: throw AssertionError("Expected non null field")
 
         assertThat(inputValues[0].name, equalTo("int"))
         assertThat(inputValues[0].type.ofType?.name, equalTo("Int"))
@@ -144,21 +149,21 @@ class IntrospectionSpecificationTest {
     }
 
     @Test
-    fun `fields args are introspected`(){
+    fun `fields args are introspected`() {
         val schema = defaultSchema {
-            query("data"){
+            query("data") {
                 resolver { int: Int, string: String -> IntString(int, string) }
             }
 
-            type<IntString>{
-                property<Double>("float"){
-                    resolver { (int), doubleIt : Boolean -> int.toDouble() * if(doubleIt) 2 else 1 }
+            type<IntString> {
+                property<Double>("float") {
+                    resolver { (int), doubleIt: Boolean -> int.toDouble() * if (doubleIt) 2 else 1 }
                 }
             }
         }
 
         val inputValues = schema.findTypeByName("IntString")?.fields?.find { it.name == "float" }?.args
-                ?: throw AssertionError("Expected non null field")
+            ?: throw AssertionError("Expected non null field")
 
         assertThat(inputValues[0].name, equalTo("doubleIt"))
         assertThat(inputValues[0].type.ofType?.name, equalTo("Boolean"))
@@ -168,12 +173,12 @@ class IntrospectionSpecificationTest {
         val value: String
     }
 
-    class Face(override val value: String, override val value2 : Boolean = false) : InterInter
+    class Face(override val value: String, override val value2: Boolean = false) : InterInter
 
     @Test
-    fun `__typename returns actual type of object`(){
+    fun `__typename returns actual type of object`() {
         val schema = defaultSchema {
-            query("interface"){
+            query("interface") {
                 resolver { -> Face("~~MOCK~~") as Inter }
             }
 
@@ -188,13 +193,13 @@ class IntrospectionSpecificationTest {
     }
 
     interface InterInter : Inter {
-        val value2 : Boolean
+        val value2: Boolean
     }
 
     @Test
-    fun `Interfaces are supported in introspection`(){
+    fun `Interfaces are supported in introspection`() {
         val schema = defaultSchema {
-            query("interface"){
+            query("interface") {
                 resolver { -> Face("~~MOCK~~") }
             }
 
@@ -214,13 +219,13 @@ class IntrospectionSpecificationTest {
     data class Book(val id: String)
 
     val unionSchema = defaultSchema {
-        query("interface"){
+        query("interface") {
             resolver { -> Face("~~MOCK~~") }
         }
 
-        type<Face>{
-            unionProperty("union"){
-                returnType = unionType("FaceBook"){
+        type<Face> {
+            unionProperty("union") {
+                returnType = unionType("FaceBook") {
                     type<Face>()
                     type<Book>()
                 }
@@ -231,27 +236,27 @@ class IntrospectionSpecificationTest {
     }
 
     @Test
-    fun `union types possible types are supported`(){
+    fun `union types possible types are supported`() {
         val possibleTypes = unionSchema.findTypeByName("FaceBook")?.possibleTypes?.map { it.name }
         assertThat(possibleTypes, equalTo(listOf<String?>("Face", "Book")))
     }
 
     @Test
     fun `union types should not be duplicated`() {
-        val facebookCount = unionSchema.model.allTypes.map {it.name }.count { it == "FaceBook" }
+        val facebookCount = unionSchema.model.allTypes.map { it.name }.count { it == "FaceBook" }
         assertThat(facebookCount, equalTo(1))
     }
 
     @Test
-    fun `introspection field __typename must not leak into schema introspection`(){
+    fun `introspection field __typename must not leak into schema introspection`() {
         val schema = defaultSchema {
-            query("interface"){
+            query("interface") {
                 resolver { -> Face("~~MOCK~~") }
             }
         }
 
         val map = deserialize(schema.executeBlocking(INTROSPECTION_QUERY))
-        val fields = map.extract<List<Map<String,*>>>("data/__schema/types[0]/fields")
+        val fields = map.extract<List<Map<String, *>>>("data/__schema/types[0]/fields")
 
         fields.forEach { field ->
             assertThat(field["name"] as String, not(startsWith("__")))
@@ -259,19 +264,19 @@ class IntrospectionSpecificationTest {
     }
 
     @Test
-    fun `introspection types should not contain duplicated float type for kotlin Double and Float`(){
+    fun `introspection types should not contain duplicated float type for kotlin Double and Float`() {
         val schema = defaultSchema {
-            query("interface"){
+            query("interface") {
                 resolver { -> Face("~~MOCK~~") }
             }
         }
 
         val map = deserialize(schema.executeBlocking(INTROSPECTION_QUERY))
-        val types = map.extract<List<Map<Any,*>>>("data/__schema/types")
+        val types = map.extract<List<Map<Any, *>>>("data/__schema/types")
 
         val typenames = types.map { type -> type["name"] as String }.sorted()
 
-        for(i in typenames.indices){
+        for (i in typenames.indices) {
             typenames[i] shouldNotEqual typenames.getOrNull(i + 1)
         }
     }
@@ -288,9 +293,9 @@ class IntrospectionSpecificationTest {
      * Not part of spec, but assumption of many graphql tools
      */
     @Test
-    fun `query type should have non null, empty interface list`(){
+    fun `query type should have non null, empty interface list`() {
         val schema = defaultSchema {
-            query("interface"){
+            query("interface") {
                 resolver { -> Face("~~MOCK~~") }
             }
         }
@@ -303,14 +308,15 @@ class IntrospectionSpecificationTest {
      * Not part of spec, but assumption of many graphql tools
      */
     @Test
-    fun `__Directive introspection type should have onField, onFragment, onOperation fields`(){
+    fun `__Directive introspection type should have onField, onFragment, onOperation fields`() {
         val schema = defaultSchema {
-            query("interface"){
+            query("interface") {
                 resolver { -> Face("~~MOCK~~") }
             }
         }
 
-        val response = deserialize(schema.executeBlocking("{__schema{directives{name, onField, onFragment, onOperation}}}"))
+        val response =
+            deserialize(schema.executeBlocking("{__schema{directives{name, onField, onFragment, onOperation}}}"))
         val directives = response.extract<List<Map<String, *>>>("data/__schema/directives")
         directives.forEach { directive ->
             assertThat(directive["name"] as String, anyOf(equalTo("skip"), equalTo("include")))

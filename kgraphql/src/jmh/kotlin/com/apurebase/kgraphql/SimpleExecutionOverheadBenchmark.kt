@@ -21,13 +21,13 @@ open class SimpleExecutionOverheadBenchmark {
     @Param("true", "false")
     var withKGraphQL = true
 
-    lateinit var schema : Schema
+    lateinit var schema: Schema
 
-    lateinit var objectMapper : ObjectMapper
+    lateinit var objectMapper: ObjectMapper
 
     @Setup
-    fun setup(){
-        if(withKGraphQL){
+    fun setup() {
+        if (withKGraphQL) {
             schema = BenchmarkSchema.create {}
         } else {
             objectMapper = jacksonObjectMapper()
@@ -36,7 +36,7 @@ open class SimpleExecutionOverheadBenchmark {
 
     @Benchmark
     fun benchmark(): String {
-        if(withKGraphQL){
+        if (withKGraphQL) {
             return schema.executeBlocking("{one{name, quantity, active}, two(name : \"FELLA\"){range{start, endInclusive}}, three{id}}")
         } else {
             return runBlocking {
@@ -48,13 +48,13 @@ open class SimpleExecutionOverheadBenchmark {
     }
 
     @Test
-    fun testWithKGraphQL(){
+    fun testWithKGraphQL() {
         setup()
         println(benchmark())
     }
 
     @Test
-    fun testNoKGraphQL(){
+    fun testNoKGraphQL() {
         withKGraphQL = false
         println(benchmark())
     }

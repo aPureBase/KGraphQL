@@ -4,7 +4,7 @@ import com.apurebase.kgraphql.schema.model.ast.DocumentNode
 import com.github.benmanes.caffeine.cache.Caffeine
 
 
-class CachingDocumentParser(cacheMaximumSize : Long = 1000L) {
+class CachingDocumentParser(cacheMaximumSize: Long = 1000L) {
 
     sealed class Result {
         class Success(val document: DocumentNode) : Result()
@@ -14,11 +14,11 @@ class CachingDocumentParser(cacheMaximumSize : Long = 1000L) {
     val cache = Caffeine.newBuilder().maximumSize(cacheMaximumSize).build<String, Result>()
 
     fun parseDocument(input: String): DocumentNode {
-        val result =  cache.get(input) {
+        val result = cache.get(input) {
             val parser = Parser(input)
             try {
                 Result.Success(parser.parseDocument())
-            } catch ( e : Exception){
+            } catch (e: Exception) {
                 Result.Exception(e)
             }
         }

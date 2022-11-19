@@ -1,23 +1,20 @@
 package com.apurebase.kgraphql.integration.github
 
 import com.apurebase.kgraphql.KGraphQL
-import com.apurebase.kgraphql.objectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.amshove.kluent.`should contain`
-import org.amshove.kluent.should
 import org.amshove.kluent.shouldContain
 import org.junit.jupiter.api.Test
 
 class GitHubIssue109 {
 
     data class Wrapper(
-        val items: List<QualificationItem>
+        val items: List<QualificationItem>,
     )
 
     sealed class QualificationItem {
         data class Qual1(
-            val id: String
+            val id: String,
         ) : QualificationItem()
     }
 
@@ -34,7 +31,8 @@ class GitHubIssue109 {
         }
 
         val result = jacksonObjectMapper().readValue<Result>(
-            schema.executeBlocking("""
+            schema.executeBlocking(
+                """
                 query IntrospectionQuery {
                     __schema {
                         types {
@@ -51,7 +49,8 @@ class GitHubIssue109 {
                         }
                     }
                 }
-            """)
+            """
+            )
         )
 
         result.data.__schema.types.shouldContain(
@@ -78,11 +77,13 @@ class GitHubIssue109 {
     data class Type(
         val name: String?,
         val fields: List<Field>? = null,
-        val possibleTypes: List<FieldType>? = null
+        val possibleTypes: List<FieldType>? = null,
     )
+
     data class Field(
         val name: String?,
-        val type: FieldType
+        val type: FieldType,
     )
+
     data class FieldType(val name: String? = null)
 }

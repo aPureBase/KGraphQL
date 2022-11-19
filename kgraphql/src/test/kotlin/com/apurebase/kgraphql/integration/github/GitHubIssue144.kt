@@ -9,11 +9,11 @@ class GitHubIssue144 {
     data class Agenda(
         val date: LocalDate,
         val slots: List<Slots>,
-        val hasSlotsAvailable: Boolean
+        val hasSlotsAvailable: Boolean,
     )
 
     data class Slots(
-        val hour: Int
+        val hour: Int,
     )
 
     @Test
@@ -33,7 +33,8 @@ class GitHubIssue144 {
                     arg<List<String>> { name = "tags"; defaultValue = emptyList() }
                 }
             }
-        }.executeBlocking("""
+        }.executeBlocking(
+            """
             {
                 slots {
                     date
@@ -43,7 +44,8 @@ class GitHubIssue144 {
                     }
                 }
             }
-        """.trimIndent()).also(::println)
+        """.trimIndent()
+        ).also(::println)
 
     }
 

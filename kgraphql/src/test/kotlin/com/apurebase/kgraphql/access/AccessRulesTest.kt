@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 
 class AccessRulesTest {
 
-    class Player(val name : String, val id : Int = 0)
+    class Player(val name: String, val id: Int = 0)
 
     val schema = defaultSchema {
         query("black_mamba") {
@@ -19,11 +19,11 @@ class AccessRulesTest {
             resolver { -> Player("BONNER") }
         }
 
-        type<Player>{
+        type<Player> {
             val accessRuleBlock = { player: Player, _: Context ->
                 if (player.name != "BONNER") IllegalAccessException("ILLEGAL ACCESS") else null
             }
-            property(Player::id){
+            property(Player::id) {
                 accessRule(accessRuleBlock)
             }
             property<String>("item") {
@@ -35,19 +35,19 @@ class AccessRulesTest {
 
 
     @Test
-    fun `allow when matching`(){
-        val kobe = deserialize (
-                schema.executeBlocking("{black_mamba{name}}", context = context { +"LAKERS" })
+    fun `allow when matching`() {
+        val kobe = deserialize(
+            schema.executeBlocking("{black_mamba{name}}", context = context { +"LAKERS" })
         ).extract<String>("data/black_mamba/name")
 
         assertThat(kobe, equalTo("KOBE"))
     }
 
     @Test
-    fun `reject when not matching`(){
+    fun `reject when not matching`() {
         expect<IllegalAccessException>("") {
-            deserialize (
-                    schema.executeBlocking("{ black_mamba {id} }", context = context { +"LAKERS" })
+            deserialize(
+                schema.executeBlocking("{ black_mamba {id} }", context = context { +"LAKERS" })
             ).extract<String>("data/black_mamba/id")
         }
     }

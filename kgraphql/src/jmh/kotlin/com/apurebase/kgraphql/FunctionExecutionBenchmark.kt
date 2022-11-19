@@ -25,9 +25,9 @@ open class FunctionExecutionBenchmark {
     @Param("true", "false")
     var useFunctionWrapper = true
 
-    lateinit var functionWrapper : FunctionWrapper.ArityTwo<String, Int, String>
+    lateinit var functionWrapper: FunctionWrapper.ArityTwo<String, Int, String>
 
-    lateinit var biFunction : BiFunction<Int, String, String>
+    lateinit var biFunction: BiFunction<Int, String, String>
 
     val arg1 = 3
 
@@ -36,8 +36,8 @@ open class FunctionExecutionBenchmark {
     val implementation = { int: Int, string: String -> "${int * ThreadLocalRandom.current().nextDouble()} $string" }
 
     @Setup
-    fun setup(){
-        if(useFunctionWrapper){
+    fun setup() {
+        if (useFunctionWrapper) {
             val implSuspend: suspend (Int, String) -> String = { int, string -> implementation(int, string) }
             functionWrapper = FunctionWrapper.ArityTwo(implSuspend, false)
         } else {
@@ -57,7 +57,7 @@ open class FunctionExecutionBenchmark {
     }
 
     @Test
-    fun check(){
+    fun check() {
         setup()
         println(benchmarkFunctionExecution())
     }

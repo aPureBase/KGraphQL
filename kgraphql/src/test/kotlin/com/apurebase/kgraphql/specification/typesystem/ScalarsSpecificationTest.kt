@@ -1,11 +1,7 @@
 package com.apurebase.kgraphql.specification.typesystem
 
-import com.apurebase.kgraphql.KGraphQL
-import com.apurebase.kgraphql.Specification
-import com.apurebase.kgraphql.deserialize
-import com.apurebase.kgraphql.extract
+import com.apurebase.kgraphql.*
 import com.apurebase.kgraphql.schema.model.ast.ValueNode
-import com.apurebase.kgraphql.GraphQLError
 import com.apurebase.kgraphql.schema.scalar.StringScalarCoercion
 import org.amshove.kluent.*
 import org.hamcrest.CoreMatchers.equalTo
@@ -43,9 +39,11 @@ class ScalarsSpecificationTest {
         val queryResponse = deserialize(testedSchema.executeBlocking("{person{uuid}}"))
         assertThat(queryResponse.extract<String>("data/person/uuid"), equalTo(uuid.toString()))
 
-        val mutationResponse = deserialize(testedSchema.executeBlocking(
+        val mutationResponse = deserialize(
+            testedSchema.executeBlocking(
                 "mutation{createPerson(uuid: \"$uuid\", name: \"John\"){uuid name}}"
-        ))
+            )
+        )
         assertThat(mutationResponse.extract<String>("data/createPerson/uuid"), equalTo(uuid.toString()))
         assertThat(mutationResponse.extract<String>("data/createPerson/name"), equalTo("John"))
     }
@@ -91,7 +89,8 @@ class ScalarsSpecificationTest {
         }
 
         val randomUUID = UUID.randomUUID()
-        val map = deserialize(testedSchema.executeBlocking("query(\$id: ID = \"$randomUUID\"){personById(id: \$id){uuid, name}}"))
+        val map =
+            deserialize(testedSchema.executeBlocking("query(\$id: ID = \"$randomUUID\"){personById(id: \$id){uuid, name}}"))
         assertThat(map.extract<String>("data/personById/uuid"), equalTo(randomUUID.toString()))
     }
 
@@ -289,7 +288,8 @@ class ScalarsSpecificationTest {
 
         val manufacturer = """Joe Bloggs"""
 
-        val response = deserialize(schema.executeBlocking(
+        val response = deserialize(
+            schema.executeBlocking(
                 "mutation Mutation(\$newPart : NewPart!){ addPart(newPart: \$newPart) {manufacturer} }",
                 """
                     { "newPart" : {
@@ -298,7 +298,8 @@ class ScalarsSpecificationTest {
                       "oem":true,
                       "addedDate":"2001-09-01"
                     }}
-                """.trimIndent())
+                """.trimIndent()
+            )
         )
 
         assertThat(response.extract<String>("data/addPart/manufacturer"), equalTo(manufacturer))

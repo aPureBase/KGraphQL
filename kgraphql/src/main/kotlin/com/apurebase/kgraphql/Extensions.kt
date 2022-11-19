@@ -2,7 +2,6 @@ package com.apurebase.kgraphql
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
@@ -13,9 +12,9 @@ internal fun <T : Any> KClass<T>.defaultKQLTypeName() = this.simpleName!!
 
 internal fun KType.defaultKQLTypeName() = this.jvmErasure.defaultKQLTypeName()
 
-internal fun String.dropQuotes() : String = if(isLiteral()) drop(1).dropLast(1) else this
+internal fun String.dropQuotes(): String = if (isLiteral()) drop(1).dropLast(1) else this
 
-internal fun String.isLiteral() : Boolean = startsWith('\"') && endsWith('\"')
+internal fun String.isLiteral(): Boolean = startsWith('\"') && endsWith('\"')
 
 internal fun KParameter.isNullable() = type.isMarkedNullable
 
@@ -34,10 +33,9 @@ internal fun KType.getIterableElementType(): KType? {
 internal fun not(boolean: Boolean) = !boolean
 
 
-
 internal suspend fun <T, R> Collection<T>.toMapAsync(
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    block: suspend (T) -> R
+    block: suspend (T) -> R,
 ): Map<T, R> = coroutineScope {
     val channel = Channel<Pair<T, R>>()
     val jobs = map { item ->

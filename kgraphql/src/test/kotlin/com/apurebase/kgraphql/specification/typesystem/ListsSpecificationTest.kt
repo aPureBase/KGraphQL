@@ -1,28 +1,22 @@
 package com.apurebase.kgraphql.specification.typesystem
 
+import com.apurebase.kgraphql.*
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.apurebase.kgraphql.KGraphQL
-import com.apurebase.kgraphql.Specification
-import com.apurebase.kgraphql.deserialize
-import com.apurebase.kgraphql.extract
-import com.apurebase.kgraphql.GraphQLError
 import org.amshove.kluent.*
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.notNullValue
-import org.hamcrest.CoreMatchers.nullValue
+import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
 
 @Specification("3.1.7 Lists")
-class ListsSpecificationTest{
+class ListsSpecificationTest {
 
     private val objectMapper = jacksonObjectMapper()
 
     @Test
-    fun `list arguments are valid`(){
+    fun `list arguments are valid`() {
         val schema = KGraphQL.schema {
-            query("list"){
-                resolver{ list: Iterable<String> -> list }
+            query("list") {
+                resolver { list: Iterable<String> -> list }
             }
         }
 
@@ -38,10 +32,10 @@ class ListsSpecificationTest{
     }
 
     @Test
-    fun `lists with nullable entries are valid`(){
+    fun `lists with nullable entries are valid`() {
         val schema = KGraphQL.schema {
-            query("list"){
-                resolver{ list: Iterable<String?> -> list }
+            query("list") {
+                resolver { list: Iterable<String?> -> list }
             }
         }
 
@@ -55,10 +49,10 @@ class ListsSpecificationTest{
     }
 
     @Test
-    fun `lists with non-nullable entries should not accept list with null element`(){
+    fun `lists with non-nullable entries should not accept list with null element`() {
         val schema = KGraphQL.schema {
-            query("list"){
-                resolver{ list: Iterable<String> -> list }
+            query("list") {
+                resolver { list: Iterable<String> -> list }
             }
         }
 
@@ -77,10 +71,10 @@ class ListsSpecificationTest{
     }
 
     @Test
-    fun `by default coerce single element input as collection`(){
+    fun `by default coerce single element input as collection`() {
         val schema = KGraphQL.schema {
-            query("list"){
-                resolver{ list: Iterable<String> -> list }
+            query("list") {
+                resolver { list: Iterable<String> -> list }
             }
         }
 
@@ -95,10 +89,10 @@ class ListsSpecificationTest{
     }
 
     @Test
-    fun `null value is not coerced as single element collection`(){
+    fun `null value is not coerced as single element collection`() {
         val schema = KGraphQL.schema {
-            query("list"){
-                resolver{ list: Iterable<String>? -> list }
+            query("list") {
+                resolver { list: Iterable<String>? -> list }
             }
         }
 
@@ -113,10 +107,10 @@ class ListsSpecificationTest{
     }
 
     @Test
-    fun `list argument can be declared non-nullable`(){
+    fun `list argument can be declared non-nullable`() {
         val schema = KGraphQL.schema {
-            query("list"){
-                resolver{ list: Iterable<String> -> list }
+            query("list") {
+                resolver { list: Iterable<String> -> list }
             }
         }
 
@@ -130,12 +124,12 @@ class ListsSpecificationTest{
     }
 
     @Test
-    fun `Iterable implementations are treated as list`(){
+    fun `Iterable implementations are treated as list`() {
 
-        fun getResult() : Iterable<String> = listOf("POTATO", "BATATO", "ROTATO")
+        fun getResult(): Iterable<String> = listOf("POTATO", "BATATO", "ROTATO")
 
         val schema = KGraphQL.schema {
-            query("list"){
+            query("list") {
                 resolver { -> getResult() }
             }
         }

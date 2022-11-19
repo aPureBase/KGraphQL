@@ -1,18 +1,13 @@
 package com.apurebase.kgraphql.server
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.apurebase.kgraphql.schema.DefaultSchema
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import io.netty.handler.codec.http.DefaultFullHttpResponse
-import io.netty.handler.codec.http.FullHttpRequest
-import io.netty.handler.codec.http.HttpHeaderNames
-import io.netty.handler.codec.http.HttpHeaderValues
-import io.netty.handler.codec.http.HttpResponseStatus
-import io.netty.handler.codec.http.HttpVersion
+import io.netty.handler.codec.http.*
 import io.netty.util.AsciiString
 import java.nio.charset.Charset
 import java.util.logging.Level
@@ -22,14 +17,14 @@ import java.util.logging.Logger
  * TODO: refactor and splitOperationsAndFragments to two handlers : for queries and for API docs
  */
 @ChannelHandler.Sharable
-class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandler<FullHttpRequest>() {
+class HttpRequestHandler(val schema: DefaultSchema) : SimpleChannelInboundHandler<FullHttpRequest>() {
 
-    val logger : Logger = Logger.getLogger( HttpRequestHandler::class.qualifiedName )
+    val logger: Logger = Logger.getLogger(HttpRequestHandler::class.qualifiedName)
 
     val objectMapper = ObjectMapper()
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: FullHttpRequest) {
-        when{
+        when {
             msg.uri().startsWith("/graphql") -> handleQuery(ctx, msg)
             else -> exceptionCaught(ctx, IllegalArgumentException("Invalid path"))
         }
@@ -38,12 +33,20 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
     private fun handleQuery(ctx: ChannelHandlerContext, msg: FullHttpRequest) {
         val content = msg.content().toString(Charset.defaultCharset())
         val query = objectMapper.readTree(content)["query"].textValue()
-                ?: throw IllegalArgumentException("Please specify only one query")
+            ?: throw IllegalArgumentException("Please specify only one query")
         try {
             val response = schema.executeBlocking(query, null)
             writeResponse(ctx, response)
-        } catch(e: Exception) {
-            writeResponse(ctx, "{\"errors\" : { \"message\": \"Caught ${e.javaClass.canonicalName}: ${e.message?.replace("\"", "\\\"")}\"}}")
+        } catch (e: Exception) {
+            writeResponse(
+                ctx,
+                "{\"errors\" : { \"message\": \"Caught ${e.javaClass.canonicalName}: ${
+                    e.message?.replace(
+                        "\"",
+                        "\\\""
+                    )
+                }\"}}"
+            )
         }
     }
 
@@ -52,12 +55,16 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
         writeErrorMessage(cause, ctx)
     }
 
-    private fun writeResponse(ctx: ChannelHandlerContext, response: String, contentType: AsciiString = HttpHeaderValues.APPLICATION_JSON) {
+    private fun writeResponse(
+        ctx: ChannelHandlerContext,
+        response: String,
+        contentType: AsciiString = HttpHeaderValues.APPLICATION_JSON,
+    ) {
 
         val httpResponse = io.netty.handler.codec.http.DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.OK,
-                Unpooled.wrappedBuffer(response.toByteArray())
+            HttpVersion.HTTP_1_1,
+            HttpResponseStatus.OK,
+            Unpooled.wrappedBuffer(response.toByteArray())
         )
 
         httpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH, httpResponse.content().readableBytes())
@@ -65,11 +72,12 @@ class HttpRequestHandler(val schema : DefaultSchema) : SimpleChannelInboundHandl
 
         ctx.writeAndFlush(httpResponse)
     }
+
     private fun writeErrorMessage(cause: Throwable, ctx: ChannelHandlerContext) {
         val httpResponse = DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.INTERNAL_SERVER_ERROR,
-                Unpooled.wrappedBuffer(objectMapper.writeValueAsBytes(cause.message))
+            HttpVersion.HTTP_1_1,
+            HttpResponseStatus.INTERNAL_SERVER_ERROR,
+            Unpooled.wrappedBuffer(objectMapper.writeValueAsBytes(cause.message))
         )
 
         httpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH, httpResponse.content().readableBytes())

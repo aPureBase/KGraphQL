@@ -11,8 +11,8 @@ import kotlin.reflect.KType
 
 class SchemaProxy(
     override val configuration: SchemaConfiguration,
-    var proxiedSchema : LookupSchema? = null
-): LookupSchema {
+    var proxiedSchema: LookupSchema? = null,
+) : LookupSchema {
 
     companion object {
         const val ILLEGAL_STATE_MESSAGE = "Missing proxied __Schema instance"
@@ -49,7 +49,12 @@ class SchemaProxy(
 
     override fun inputTypeByName(name: String): Type? = inputTypeByName(name)
 
-    override suspend fun execute(request: String, variables: String?, context: Context, options: ExecutionOptions): String {
+    override suspend fun execute(
+        request: String,
+        variables: String?,
+        context: Context,
+        options: ExecutionOptions,
+    ): String {
         return getProxied().execute(request, variables, context, options)
     }
 }

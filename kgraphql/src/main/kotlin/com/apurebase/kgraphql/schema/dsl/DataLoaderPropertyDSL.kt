@@ -12,8 +12,8 @@ import kotlin.reflect.KType
 class DataLoaderPropertyDSL<T, K, R>(
     val name: String,
     val returnType: KType,
-    private val block : DataLoaderPropertyDSL<T, K, R>.() -> Unit
-): LimitedAccessItemDSL<T>(), ResolverDSL.Target {
+    private val block: DataLoaderPropertyDSL<T, K, R>.() -> Unit,
+) : LimitedAccessItemDSL<T>(), ResolverDSL.Target {
 
     internal var dataLoader: BatchLoader<K, R>? = null
     internal var prepareWrapper: FunctionWrapper<K>? = null
@@ -62,9 +62,12 @@ class DataLoaderPropertyDSL<T, K, R>(
         prepareWrapper = FunctionWrapper.on(block, true)
     }
 
-    fun accessRule(rule: (T, Context) -> Exception?){
+    fun accessRule(rule: (T, Context) -> Exception?) {
         val accessRuleAdapter: (T?, Context) -> Exception? = { parent, ctx ->
-            if (parent != null) rule(parent, ctx) else IllegalArgumentException("Unexpected null parent of kotlin property")
+            if (parent != null) rule(
+                parent,
+                ctx
+            ) else IllegalArgumentException("Unexpected null parent of kotlin property")
         }
         this.accessRuleBlock = accessRuleAdapter
     }

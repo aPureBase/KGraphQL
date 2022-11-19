@@ -14,7 +14,7 @@ import kotlin.reflect.typeOf
 
 open class TypeDSL<T : Any>(
     private val supportedUnions: Collection<TypeDef.Union>,
-    val kClass: KClass<T>
+    val kClass: KClass<T>,
 ) : ItemDSL() {
 
     var name = kClass.defaultKQLTypeName()
@@ -49,44 +49,56 @@ open class TypeDSL<T : Any>(
         transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
-    fun <R, E, W, Q, A, S, B> transformation(kProperty: KProperty1<T, R>, function: suspend (R, E, W, Q, A, S, B) -> R) {
+    fun <R, E, W, Q, A, S, B> transformation(
+        kProperty: KProperty1<T, R>,
+        function: suspend (R, E, W, Q, A, S, B) -> R,
+    ) {
         transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
-    fun <R, E, W, Q, A, S, B, U> transformation(kProperty: KProperty1<T, R>, function: suspend (R, E, W, Q, A, S, B, U) -> R) {
+    fun <R, E, W, Q, A, S, B, U> transformation(
+        kProperty: KProperty1<T, R>,
+        function: suspend (R, E, W, Q, A, S, B, U) -> R,
+    ) {
         transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
-    fun <R, E, W, Q, A, S, B, U, C> transformation(kProperty: KProperty1<T, R>, function: suspend (R, E, W, Q, A, S, B, U, C) -> R) {
+    fun <R, E, W, Q, A, S, B, U, C> transformation(
+        kProperty: KProperty1<T, R>,
+        function: suspend (R, E, W, Q, A, S, B, U, C) -> R,
+    ) {
         transformationProperties.add(Transformation(kProperty, FunctionWrapper.on(function, true)))
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    inline fun <KEY, reified TYPE> dataProperty(name: String, noinline block: DataLoaderPropertyDSL<T, KEY, TYPE>.() -> Unit) {
+    inline fun <KEY, reified TYPE> dataProperty(
+        name: String,
+        noinline block: DataLoaderPropertyDSL<T, KEY, TYPE>.() -> Unit,
+    ) {
         dataloadedExtensionProperties.add(
             DataLoaderPropertyDSL(name, typeOf<TYPE>(), block).toKQLProperty()
         )
     }
 
-    fun <R> property(kProperty: KProperty1<T, R>, block : KotlinPropertyDSL<T, R>.() -> Unit){
+    fun <R> property(kProperty: KProperty1<T, R>, block: KotlinPropertyDSL<T, R>.() -> Unit) {
         val dsl = KotlinPropertyDSL(kProperty, block)
         describedKotlinProperties[kProperty] = dsl.toKQLProperty()
     }
 
-    fun <R> property(name : String, block : PropertyDSL<T, R>.() -> Unit){
+    fun <R> property(name: String, block: PropertyDSL<T, R>.() -> Unit) {
         val dsl = PropertyDSL(name, block)
         extensionProperties.add(dsl.toKQLProperty())
     }
 
-    fun <R> KProperty1<T, R>.configure(block : KotlinPropertyDSL<T, R>.() -> Unit){
+    fun <R> KProperty1<T, R>.configure(block: KotlinPropertyDSL<T, R>.() -> Unit) {
         property(this, block)
     }
 
-    fun <R> KProperty1<T, R>.ignore(){
+    fun <R> KProperty1<T, R>.ignore() {
         describedKotlinProperties[this] = PropertyDef.Kotlin(kProperty = this, isIgnored = true)
     }
 
-    fun unionProperty(name : String, block : UnionPropertyDSL<T>.() -> Unit){
+    fun unionProperty(name: String, block: UnionPropertyDSL<T>.() -> Unit) {
         val property = UnionPropertyDSL(name, block)
         val union = supportedUnions.find { property.returnType.typeID.equals(it.name, true) }
             ?: throw SchemaException("Union Type: ${property.returnType.typeID} does not exist")
@@ -95,7 +107,7 @@ open class TypeDSL<T : Any>(
     }
 
 
-    internal fun toKQLObject() : TypeDef.Object<T> {
+    internal fun toKQLObject(): TypeDef.Object<T> {
         return TypeDef.Object(
             name = name,
             kClass = kClass,

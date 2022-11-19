@@ -23,12 +23,12 @@ import kotlin.reflect.typeOf
  */
 class SchemaBuilderTest {
     @Test
-    fun `DSL created UUID scalar support`(){
+    fun `DSL created UUID scalar support`() {
 
         val testedSchema = defaultSchema {
             stringScalar<UUID> {
                 description = "unique identifier of object"
-                deserialize = { uuid : String -> UUID.fromString(uuid) }
+                deserialize = { uuid: String -> UUID.fromString(uuid) }
                 serialize = UUID::toString
             }
         }
@@ -45,7 +45,7 @@ class SchemaBuilderTest {
             query("scenario") {
                 resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "TOO LONG") }
             }
-            type<Scenario>{
+            type<Scenario> {
                 Scenario::author.ignore()
                 Scenario::content.configure {
                     description = "Content is Content"
@@ -55,7 +55,7 @@ class SchemaBuilderTest {
         }
 
         val scenarioType = testedSchema.model.queryTypes[Scenario::class]
-                ?: throw Exception("Scenario type should be present in schema")
+            ?: throw Exception("Scenario type should be present in schema")
         assertThat(scenarioType["author"], nullValue())
         assertThat(scenarioType["content"], notNullValue())
     }
@@ -69,7 +69,7 @@ class SchemaBuilderTest {
         }
 
         val scenarioType = testedSchema.model.queryTypes[Account::class]
-                ?: throw Exception("Account type should be present in schema")
+            ?: throw Exception("Account type should be present in schema")
 
         // id should exist because it is public
         assertThat(scenarioType["id"], notNullValue())
@@ -85,39 +85,39 @@ class SchemaBuilderTest {
     fun `transformation DSL`() {
         val testedSchema = defaultSchema {
             query("scenario") {
-                resolver { -> Scenario(Id("GKalus", 234234),"Gamil Kalus", "TOO LONG") }
+                resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "TOO LONG") }
             }
             type<Scenario> {
 
-                transformation(Scenario::content, { content: String, capitalized : Boolean? ->
-                    if(capitalized == true) content.capitalize() else content
+                transformation(Scenario::content, { content: String, capitalized: Boolean? ->
+                    if (capitalized == true) content.capitalize() else content
                 })
             }
         }
         val scenarioType = testedSchema.model.queryTypes[Scenario::class]
-                ?: throw Exception("Scenario type should be present in schema")
+            ?: throw Exception("Scenario type should be present in schema")
         assertThat(scenarioType.kind, equalTo(TypeKind.OBJECT))
         assertThat(scenarioType["content"], notNullValue())
     }
 
     @Test
-    fun `extension property DSL`(){
+    fun `extension property DSL`() {
         val testedSchema = defaultSchema {
 
             query("scenario") {
-                resolver { -> Scenario(Id("GKalus", 234234),"Gamil Kalus", "TOO LONG") }
+                resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "TOO LONG") }
             }
 
             type<Scenario> {
                 property<String>("pdf") {
                     description = "link to pdf representation of scenario"
-                    resolver { scenario : Scenario -> "http://scenarios/${scenario.id}" }
+                    resolver { scenario: Scenario -> "http://scenarios/${scenario.id}" }
                 }
             }
         }
 
         val scenarioType = testedSchema.model.queryTypes[Scenario::class]
-                ?: throw Exception("Scenario type should be present in schema")
+            ?: throw Exception("Scenario type should be present in schema")
 
         assertThat(scenarioType.kind, equalTo(TypeKind.OBJECT))
         assertThat(scenarioType["pdf"], notNullValue())
@@ -125,11 +125,11 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `union type DSL`(){
+    fun `union type DSL`() {
         val tested = defaultSchema {
 
             query("scenario") {
-                resolver { -> Scenario(Id("GKalus", 234234),"Gamil Kalus", "TOO LONG") }
+                resolver { -> Scenario(Id("GKalus", 234234), "Gamil Kalus", "TOO LONG") }
             }
 
             val linked = unionType("Linked") {
@@ -141,10 +141,10 @@ class SchemaBuilderTest {
                 unionProperty("pdf") {
                     returnType = linked
                     description = "link to pdf representation of scenario"
-                    resolver { scenario : Scenario ->
-                        if(scenario.author.startsWith("Gamil")){
+                    resolver { scenario: Scenario ->
+                        if (scenario.author.startsWith("Gamil")) {
                             Scenario(Id("ADD", 22), "gambino", "nope")
-                        } else{
+                        } else {
                             Actor("Chance", 333)
                         }
                     }
@@ -153,7 +153,7 @@ class SchemaBuilderTest {
         }
 
         val scenarioType = tested.model.queryTypes[Scenario::class]
-                ?: throw Exception("Scenario type should be present in schema")
+            ?: throw Exception("Scenario type should be present in schema")
 
         val unionField = scenarioType["pdf"]
         assertThat(unionField, notNullValue())
@@ -161,7 +161,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `circular dependency extension property`(){
+    fun `circular dependency extension property`() {
         val tested = defaultSchema {
             query("actor") {
                 resolver { -> Actor("Little John", 44) }
@@ -175,7 +175,7 @@ class SchemaBuilderTest {
         }
 
         val actorType = tested.model.queryTypes[Actor::class]
-                ?: throw Exception("Actor type should be present in schema")
+            ?: throw Exception("Actor type should be present in schema")
         assertThat(actorType.kind, equalTo(TypeKind.OBJECT))
         val property = actorType["linked"] ?: throw Exception("Actor should have ext property 'linked'")
         assertThat(property, notNullValue())
@@ -183,10 +183,10 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `KFunction resolver`(){
+    fun `KFunction resolver`() {
         val actorService = object {
             fun getMainActor() = Actor("Little John", 44)
-            fun getActor(id: Int) = when(id) {
+            fun getActor(id: Int) = when (id) {
                 1 -> Actor("Joey", 4)
                 else -> Actor("Bobby", 5)
             }
@@ -209,7 +209,7 @@ class SchemaBuilderTest {
         }
 
         val actorType = tested.model.queryTypes[Actor::class]
-                ?: throw Exception("Actor type should be present in schema")
+            ?: throw Exception("Actor type should be present in schema")
         assertThat(actorType.kind, equalTo(TypeKind.OBJECT))
         val property = actorType["linked"] ?: throw Exception("Actor should have ext property 'linked'")
         assertThat(property, notNullValue())
@@ -220,15 +220,15 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun ` _ is allowed as receiver argument name`(){
+    fun ` _ is allowed as receiver argument name`() {
         val schema = defaultSchema {
             query("actor") {
                 resolver { -> Actor("Boguś Linda", 4343) }
             }
 
-            type<Actor>{
+            type<Actor> {
                 property<List<String>>("favDishes") {
-                    resolver { _: Actor, size: Int->
+                    resolver { _: Actor, size: Int ->
                         listOf("steak", "burger", "soup", "salad", "bread", "bird").take(size)
                     }
                 }
@@ -239,10 +239,10 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `Custom type name`(){
+    fun `Custom type name`() {
         val schema = defaultSchema {
             query("actor") {
-                resolver { type: FilmType -> Actor("Boguś Linda $type", 4343)  }
+                resolver { type: FilmType -> Actor("Boguś Linda $type", 4343) }
             }
 
             enum<FilmType> {
@@ -250,7 +250,8 @@ class SchemaBuilderTest {
             }
         }
 
-        val result = deserialize(schema.executeBlocking("query(\$type : TYPE = FULL_LENGTH){actor(type: \$type){name}}"))
+        val result =
+            deserialize(schema.executeBlocking("query(\$type : TYPE = FULL_LENGTH){actor(type: \$type){name}}"))
         assertThat(result.extract<String>("data/actor/name"), equalTo("Boguś Linda FULL_LENGTH"))
     }
 
@@ -268,12 +269,12 @@ class SchemaBuilderTest {
         }.executeBlocking("{actors { name } }").let(::println)
     }
 
-    class InputOne(val string:  String)
+    class InputOne(val string: String)
 
-    class InputTwo(val one : InputOne)
+    class InputTwo(val one: InputOne)
 
     @Test
-    fun `Schema should map input types`(){
+    fun `Schema should map input types`() {
         val schema = defaultSchema {
             inputType<InputTwo>()
         }
@@ -284,7 +285,7 @@ class SchemaBuilderTest {
 
     @Test
     @Suppress("UNUSED_ANONYMOUS_PARAMETER")
-    fun `Schema should infer input types from resolver functions`(){
+    fun `Schema should infer input types from resolver functions`() {
         val schema = defaultSchema {
             query("sample") {
                 resolver { i: InputTwo -> "SUCCESS" }
@@ -297,16 +298,18 @@ class SchemaBuilderTest {
 
     private sealed class Maybe<out T> {
         abstract fun get(): T
+
         object Undefined : Maybe<Nothing>() {
             override fun get() = throw IllegalArgumentException("Requested value is not defined!")
         }
+
         class Defined<U>(val value: U) : Maybe<U>() {
             override fun get() = value
         }
     }
 
     @Test
-    fun `client code can declare custom generic type resolver`(){
+    fun `client code can declare custom generic type resolver`() {
         val typeResolver = object : DefaultGenericTypeResolver() {
             override fun unbox(obj: Any) = if (obj is Maybe<*>) obj.get() else super.unbox(obj)
             override fun resolveMonad(type: KType): KType {
@@ -334,13 +337,25 @@ class SchemaBuilderTest {
         deserialize(schema.executeBlocking("{__schema{queryType{fields{ type { ofType { kind name fields { type {ofType {kind name}}}}}}}}}")).let {
             assertThat(it.extract("data/__schema/queryType/fields[0]/type/ofType/kind"), equalTo("OBJECT"))
             assertThat(it.extract("data/__schema/queryType/fields[0]/type/ofType/name"), equalTo("SomeWithGenericType"))
-            assertThat(it.extract("data/__schema/queryType/fields[0]/type/ofType/fields[0]/type/ofType/kind"), equalTo("SCALAR"))
-            assertThat(it.extract("data/__schema/queryType/fields[0]/type/ofType/fields[0]/type/ofType/name"), equalTo("String"))
+            assertThat(
+                it.extract("data/__schema/queryType/fields[0]/type/ofType/fields[0]/type/ofType/kind"),
+                equalTo("SCALAR")
+            )
+            assertThat(
+                it.extract("data/__schema/queryType/fields[0]/type/ofType/fields[0]/type/ofType/name"),
+                equalTo("String")
+            )
 
             assertThat(it.extract("data/__schema/queryType/fields[1]/type/ofType/kind"), equalTo("OBJECT"))
             assertThat(it.extract("data/__schema/queryType/fields[1]/type/ofType/name"), equalTo("SomeWithGenericType"))
-            assertThat(it.extract("data/__schema/queryType/fields[1]/type/ofType/fields[0]/type/ofType/kind"), equalTo("SCALAR"))
-            assertThat(it.extract("data/__schema/queryType/fields[1]/type/ofType/fields[0]/type/ofType/name"), equalTo("String"))
+            assertThat(
+                it.extract("data/__schema/queryType/fields[1]/type/ofType/fields[0]/type/ofType/kind"),
+                equalTo("SCALAR")
+            )
+            assertThat(
+                it.extract("data/__schema/queryType/fields[1]/type/ofType/fields[0]/type/ofType/name"),
+                equalTo("String")
+            )
 
             assertThat(it.extract("data/__schema/queryType/fields[2]/type/ofType/kind"), equalTo("SCALAR"))
             assertThat(it.extract("data/__schema/queryType/fields[2]/type/ofType/name"), equalTo("String"))
@@ -366,7 +381,7 @@ class SchemaBuilderTest {
         }
     }
 
-    data class LambdaWrapper(val lambda : () -> Int)
+    data class LambdaWrapper(val lambda: () -> Int)
 
     @Test
     fun `function properties can be handled by providing generic type resolver`() {
@@ -386,7 +401,7 @@ class SchemaBuilderTest {
 
             type<LambdaWrapper>()
 
-            query("lambda"){
+            query("lambda") {
                 resolver { -> LambdaWrapper { 1 } }
             }
         }
@@ -394,8 +409,14 @@ class SchemaBuilderTest {
         deserialize(schema.executeBlocking("{__schema{queryType{fields{ type { ofType { kind name fields { type {ofType {kind name}}}}}}}}}")).let {
             assertThat(it.extract("data/__schema/queryType/fields[0]/type/ofType/kind"), equalTo("OBJECT"))
             assertThat(it.extract("data/__schema/queryType/fields[0]/type/ofType/name"), equalTo("LambdaWrapper"))
-            assertThat(it.extract("data/__schema/queryType/fields[0]/type/ofType/fields[0]/type/ofType/kind"), equalTo("SCALAR"))
-            assertThat(it.extract("data/__schema/queryType/fields[0]/type/ofType/fields[0]/type/ofType/name"), equalTo("Int"))
+            assertThat(
+                it.extract("data/__schema/queryType/fields[0]/type/ofType/fields[0]/type/ofType/kind"),
+                equalTo("SCALAR")
+            )
+            assertThat(
+                it.extract("data/__schema/queryType/fields[0]/type/ofType/fields[0]/type/ofType/name"),
+                equalTo("Int")
+            )
         }
 
         deserialize(schema.executeBlocking("{lambda {lambda}}")).let {
@@ -404,13 +425,13 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `input value default value and description can be specified`(){
+    fun `input value default value and description can be specified`() {
         val expectedDescription = "Int Argument"
         val expectedDefaultValue = 33
         val schema = defaultSchema {
-            query("data"){
+            query("data") {
                 resolver { int: Int -> int }.withArgs {
-                    arg <Int> { name = "int"; defaultValue = expectedDefaultValue; description = expectedDescription }
+                    arg<Int> { name = "int"; defaultValue = expectedDefaultValue; description = expectedDescription }
                 }
             }
         }
@@ -422,12 +443,16 @@ class SchemaBuilderTest {
         val response = deserialize(schema.executeBlocking("{data}"))
         assertThat(response.extract<Int>("data/data"), equalTo(33))
 
-        val introspection = deserialize(schema.executeBlocking("{__schema{queryType{fields{name, args{name, description, defaultValue}}}}}"))
-        assertThat(introspection.extract<String>("data/__schema/queryType/fields[0]/args[0]/description"), equalTo(expectedDescription))
+        val introspection =
+            deserialize(schema.executeBlocking("{__schema{queryType{fields{name, args{name, description, defaultValue}}}}}"))
+        assertThat(
+            introspection.extract<String>("data/__schema/queryType/fields[0]/args[0]/description"),
+            equalTo(expectedDescription)
+        )
     }
 
     @Test
-    fun `introspections query should be disabled`(){
+    fun `introspections query should be disabled`() {
         val expectedDescription = "Int Argument"
         val expectedDefaultValue = 33
         val schema = defaultSchema {
@@ -436,9 +461,9 @@ class SchemaBuilderTest {
                 introspection = false
             }
 
-            query("data"){
+            query("data") {
                 resolver { int: Int -> int }.withArgs {
-                    arg <Int> { name = "int"; defaultValue = expectedDefaultValue; description = expectedDescription }
+                    arg<Int> { name = "int"; defaultValue = expectedDefaultValue; description = expectedDescription }
                 }
             }
         }
@@ -450,12 +475,12 @@ class SchemaBuilderTest {
 
     @Test
     @Suppress("UNUSED_ANONYMOUS_PARAMETER")
-    fun `arg name must match exactly one of type property`(){
+    fun `arg name must match exactly one of type property`() {
         expect<SchemaException>("Invalid input values on data: [intss]") {
             defaultSchema {
-                query("data"){
+                query("data") {
                     resolver { int: Int, string: String? -> int }.withArgs {
-                        arg <Int> { name = "intss"; defaultValue = 33 }
+                        arg<Int> { name = "intss"; defaultValue = 33 }
                     }
                 }
             }
@@ -463,12 +488,12 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `arg name must be defined`(){
+    fun `arg name must be defined`() {
         expect<UninitializedPropertyAccessException>("lateinit property name has not been initialized") {
             defaultSchema {
-                query("data"){
+                query("data") {
                     resolver { int: Int, _: String? -> int }.withArgs {
-                        arg <Int> { defaultValue = 33 }
+                        arg<Int> { defaultValue = 33 }
                     }
                 }
             }
@@ -478,7 +503,7 @@ class SchemaBuilderTest {
     data class UserData(val username: String, val stuff: String)
 
     @Test
-    fun `client code can declare custom context class and use it in query resolver`(){
+    fun `client code can declare custom context class and use it in query resolver`() {
         val schema = KGraphQL.schema {
             query("name") {
                 resolver { ctx: Context -> ctx.get<UserData>()?.username }
@@ -486,12 +511,13 @@ class SchemaBuilderTest {
         }
 
         val georgeName = "George"
-        val response = deserialize(schema.executeBlocking("{name}", context = context { + UserData(georgeName, "STUFF") }))
+        val response =
+            deserialize(schema.executeBlocking("{name}", context = context { +UserData(georgeName, "STUFF") }))
         assertThat(response.extract<String>("data/name"), equalTo(georgeName))
     }
 
     @Test
-    fun `client code can use context class in property resolver`(){
+    fun `client code can use context class in property resolver`() {
         val georgeName = "George"
         val schema = KGraphQL.schema {
             query("actor") {
@@ -499,27 +525,28 @@ class SchemaBuilderTest {
             }
 
             type<Actor> {
-                property<String>("nickname"){
+                property<String>("nickname") {
                     resolver { _: Actor, ctx: Context -> "Hodor and ${ctx.get<UserData>()?.username}" }
                 }
 
                 transformation(Actor::name) { name: String, addStuff: Boolean?, ctx: Context ->
-                    if(addStuff == true) name + ctx[UserData::class]?.stuff  else name
+                    if (addStuff == true) name + ctx[UserData::class]?.stuff else name
                 }
             }
         }
 
         val context = context {
-            + UserData(georgeName, "STUFF")
+            +UserData(georgeName, "STUFF")
             inject("ADA")
         }
-        val response = deserialize (schema.executeBlocking("{actor{ nickname, name(addStuff: true) }}", context = context))
+        val response =
+            deserialize(schema.executeBlocking("{actor{ nickname, name(addStuff: true) }}", context = context))
         assertThat(response.extract<String>("data/actor/name"), equalTo("${georgeName}STUFF"))
         assertThat(response.extract<String>("data/actor/nickname"), equalTo("Hodor and $georgeName"))
     }
 
     @Test
-    fun `context type cannot be part of schema`(){
+    fun `context type cannot be part of schema`() {
         expect<SchemaException>("Context type cannot be part of schema") {
             KGraphQL.schema {
                 query("name") {
@@ -530,7 +557,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `There is clear message when query resolver is not present`(){
+    fun `There is clear message when query resolver is not present`() {
         expect<IllegalArgumentException>("resolver has to be specified for query [name]") {
             KGraphQL.schema {
                 query("name") { "STUFF" }
@@ -538,17 +565,28 @@ class SchemaBuilderTest {
         }
     }
 
-    class SixValues(val val1: Int = 1, val val2: String = "2", val val3: Int = 3, val val4: String = "4", val val5: Int = 5, val val6: String = "6")
+    class SixValues(
+        val val1: Int = 1,
+        val val2: String = "2",
+        val val3: Int = 3,
+        val val4: String = "4",
+        val val5: Int = 5,
+        val val6: String = "6",
+    )
 
     fun checkSixValuesSchema(schema: Schema) {
-        val response = deserialize (schema.executeBlocking("{" +
-            "queryWith1Param(val1: 2) { val1 }" +
-            "queryWith2Params(val1: 2, val2: \"3\") { val1, val2 }" +
-            "queryWith3Params(val1: 2, val2: \"3\", val3: 4) { val1, val2, val3 }" +
-            "queryWith4Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\") { val1, val2, val3, val4 }" +
-            "queryWith5Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\", val5: 6) { val1, val2, val3, val4, val5 }" +
-            "queryWith6Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\", val5: 6, val6: \"7\") { val1, val2, val3, val4, val5, val6 }" +
-            "}"))
+        val response = deserialize(
+            schema.executeBlocking(
+                "{" +
+                        "queryWith1Param(val1: 2) { val1 }" +
+                        "queryWith2Params(val1: 2, val2: \"3\") { val1, val2 }" +
+                        "queryWith3Params(val1: 2, val2: \"3\", val3: 4) { val1, val2, val3 }" +
+                        "queryWith4Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\") { val1, val2, val3, val4 }" +
+                        "queryWith5Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\", val5: 6) { val1, val2, val3, val4, val5 }" +
+                        "queryWith6Params(val1: 2, val2: \"3\", val3: 4, val4: \"5\", val5: 6, val6: \"7\") { val1, val2, val3, val4, val5, val6 }" +
+                        "}"
+            )
+        )
         assertThat(response.extract<Int>("data/queryWith1Param/val1"), equalTo(2))
 
         assertThat(response.extract<Int>("data/queryWith2Params/val1"), equalTo(2))
@@ -670,26 +708,26 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `client code can specify couroutine dispatcher for execution engine`(){
+    fun `client code can specify couroutine dispatcher for execution engine`() {
         defaultSchema {
             configure {
                 coroutineDispatcher = Dispatchers.Main
             }
 
             query("test") {
-                resolver { -> "test"}
+                resolver { -> "test" }
             }
         }
     }
 
     @Test
-    fun `Schema can have same type and input type with different names`(){
+    fun `Schema can have same type and input type with different names`() {
         val schema = defaultSchema {
             inputType<InputOne> {
-                name="TypeAsInput"
+                name = "TypeAsInput"
             }
             type<InputOne> {
-                name="TypeAsObject"
+                name = "TypeAsObject"
             }
         }
 
@@ -697,14 +735,14 @@ class SchemaBuilderTest {
         assertThat(schema.inputTypeByKClass(InputOne::class), notNullValue())
 
         val introspection = deserialize(schema.executeBlocking("{__schema{types{name}}}"))
-        val types = introspection.extract<List<Map<String,String>>>("data/__schema/types")
-        val names = types.map {it["name"]}
+        val types = introspection.extract<List<Map<String, String>>>("data/__schema/types")
+        val names = types.map { it["name"] }
         assertThat(names, hasItem("TypeAsInput"))
         assertThat(names, hasItem("TypeAsObject"))
     }
 
     @Test
-    fun `Short int types are mapped to Short Scalar`(){
+    fun `Short int types are mapped to Short Scalar`() {
         val schema = defaultSchema {
             query("shortQuery") {
                 resolver { -> 1 as Short }
@@ -713,17 +751,18 @@ class SchemaBuilderTest {
 
 
         val typesIntrospection = deserialize(schema.executeBlocking("{__schema{types{name}}}"))
-        val types = typesIntrospection.extract<List<Map<String,String>>>("data/__schema/types")
-        val names = types.map {it["name"]}
+        val types = typesIntrospection.extract<List<Map<String, String>>>("data/__schema/types")
+        val names = types.map { it["name"] }
         assertThat(names, hasItem("Short"))
 
-        val response = deserialize(schema.executeBlocking("{__schema{queryType{fields{ type { ofType { kind name }}}}}}"))
+        val response =
+            deserialize(schema.executeBlocking("{__schema{queryType{fields{ type { ofType { kind name }}}}}}"))
         assertThat(response.extract("data/__schema/queryType/fields[0]/type/ofType/kind"), equalTo("SCALAR"))
         assertThat(response.extract("data/__schema/queryType/fields[0]/type/ofType/name"), equalTo("Short"))
     }
 
     @Test
-    fun `Resolver cannot return an Unit value`(){
+    fun `Resolver cannot return an Unit value`() {
         invoking {
             KGraphQL.schema {
                 query("main") {
@@ -735,14 +774,14 @@ class SchemaBuilderTest {
         }
     }
 
-    inline fun <reified T: Any> SchemaBuilder.createGenericQuery(x: T) {
+    inline fun <reified T : Any> SchemaBuilder.createGenericQuery(x: T) {
         query("data") {
             resolver { -> x }.returns<T>()
         }
     }
 
     @Test
-    fun `specifying return type explicitly allows generic query creation`(){
+    fun `specifying return type explicitly allows generic query creation`() {
         val schema = defaultSchema {
             createGenericQuery(InputOne("generic"))
         }
@@ -750,14 +789,14 @@ class SchemaBuilderTest {
         assertThat(schema.typeByKClass(InputOne::class), notNullValue())
     }
 
-    inline fun <reified T: Any> SchemaBuilder.createGenericQueryWithoutReturns(x: T) {
+    inline fun <reified T : Any> SchemaBuilder.createGenericQueryWithoutReturns(x: T) {
         query("data") {
             resolver { -> x }
         }
     }
 
     @Test
-    fun `not specifying return value explicitly with generic query creation throws exception`(){
+    fun `not specifying return value explicitly with generic query creation throws exception`() {
         invoking {
             defaultSchema {
                 createGenericQueryWithoutReturns(InputOne("generic"))
@@ -768,7 +807,7 @@ class SchemaBuilderTest {
     }
 
     @Test
-    fun `specifying return type explicitly allows generic query creation that returns List of T`(){
+    fun `specifying return type explicitly allows generic query creation that returns List of T`() {
         val schema = defaultSchema {
             createGenericQuery(listOf("generic"))
         }
@@ -776,14 +815,14 @@ class SchemaBuilderTest {
         assertThat(result.extract("data/data"), equalTo(listOf("generic")))
     }
 
-    inline fun <T: Any, reified P: Any> TypeDSL<T>.createGenericProperty(x: P) {
+    inline fun <T : Any, reified P : Any> TypeDSL<T>.createGenericProperty(x: P) {
         property<P>("data") {
             resolver { _ -> x }.returns<P>()
         }
     }
 
     @Test
-    fun `specifying return type explicitly allows generic property creation`(){
+    fun `specifying return type explicitly allows generic property creation`() {
         val schema = defaultSchema {
             type<Scenario> {
                 createGenericProperty(InputOne("generic"))
@@ -793,7 +832,7 @@ class SchemaBuilderTest {
         assertThat(schema.typeByKClass(InputOne::class), notNullValue())
     }
 
-    inline fun <T: Any, reified P: Any> TypeDSL<T>.createGenericPropertyExplicitly(returnType: KType, x: P) {
+    inline fun <T : Any, reified P : Any> TypeDSL<T>.createGenericPropertyExplicitly(returnType: KType, x: P) {
         property<P>("data") {
             resolver { _ -> x }
             setReturnType(returnType)
@@ -804,7 +843,7 @@ class SchemaBuilderTest {
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun `creation of properties from a list`(){
+    fun `creation of properties from a list`() {
 
         val props = listOf(
             Prop(typeOf<Int>()) { 0 },

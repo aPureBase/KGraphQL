@@ -20,9 +20,9 @@ data class Lexer(
     var line: Int = 1,
 
     /** The character offset at which the current line begins.*/
-    var lineStart: Int = 0
+    var lineStart: Int = 0,
 ) {
-    constructor(source: String): this (Source(source))
+    constructor(source: String) : this(Source(source))
 
 
     /**
@@ -70,7 +70,7 @@ data class Lexer(
         fun tok(
             kind: TokenKindEnum,
             start: Int = pos,
-            end: Int = pos + 1
+            end: Int = pos + 1,
         ) = Token(
             kind = kind,
             start = start,
@@ -85,11 +85,12 @@ data class Lexer(
         }
 
 
-        val fail = { code: Int -> throw syntaxError(
-            source,
-            pos,
-            unexpectedCharacterMessage(code)
-        )
+        val fail = { code: Int ->
+            throw syntaxError(
+                source,
+                pos,
+                unexpectedCharacterMessage(code)
+            )
         }
 
         return when (val code = body[pos].toInt()) {
@@ -135,6 +136,7 @@ data class Lexer(
                     readBlockString(pos, col, prev)
                 else readString(pos, col, prev)
             }
+
             else -> fail(code)
         }
     }
@@ -399,6 +401,7 @@ data class Lexer(
                         value += charCode.toChar()
                         position += 4
                     }
+
                     else -> throw syntaxError(
                         source,
                         position,
@@ -415,8 +418,8 @@ data class Lexer(
 
     // _ A-Z a-z
     private fun isNameStart(code: Int?) = (
-        code == 95 || (code in 65..90) || (code in 97..122)
-    )
+            code == 95 || (code in 65..90) || (code in 97..122)
+            )
 
     /**
      * Reads a block string token from the source file.
@@ -473,7 +476,7 @@ data class Lexer(
                 ++line
                 lineStart = position
             } else if (
-                // Escape Triple-Quote (\""")
+            // Escape Triple-Quote (\""")
                 code == 92 &&
                 body.getOrNull(position + 1)?.toInt() == 34 &&
                 body.getOrNull(position + 2)?.toInt() == 34 &&

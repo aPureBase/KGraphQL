@@ -5,5 +5,5 @@ interface Depreciable {
 
     val isDeprecated: Boolean
 
-    val deprecationReason : String?
+    val deprecationReason: String?
 }

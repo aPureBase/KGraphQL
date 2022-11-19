@@ -50,17 +50,17 @@ class DataLoaderTest {
 
     data class AtomicProperty(
         val loader: AtomicInteger = AtomicInteger(),
-        val prepare: AtomicInteger = AtomicInteger()
+        val prepare: AtomicInteger = AtomicInteger(),
     )
 
     data class AtomicCounters(
         val abcB: AtomicProperty = AtomicProperty(),
         val abcChildren: AtomicProperty = AtomicProperty(),
-        val treeChild: AtomicProperty = AtomicProperty()
+        val treeChild: AtomicProperty = AtomicProperty(),
     )
 
     fun schema(
-        block: SchemaBuilder.() -> Unit = {}
+        block: SchemaBuilder.() -> Unit = {},
     ): Pair<DefaultSchema, AtomicCounters> {
         val counters = AtomicCounters()
 
@@ -334,7 +334,10 @@ class DataLoaderTest {
 
             val result = schema.executeBlocking(query).also(::println).deserialize()
 
-            MatcherAssert.assertThat(result.extract<String>("data/abc[0]/simpleChild/value"), CoreMatchers.equalTo("NewChild!"))
+            MatcherAssert.assertThat(
+                result.extract<String>("data/abc[0]/simpleChild/value"),
+                CoreMatchers.equalTo("NewChild!")
+            )
         }
     }
 

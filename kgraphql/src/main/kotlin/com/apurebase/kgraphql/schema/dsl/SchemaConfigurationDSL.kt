@@ -1,12 +1,12 @@
 package com.apurebase.kgraphql.schema.dsl
 
 import com.apurebase.kgraphql.configuration.PluginConfiguration
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.apurebase.kgraphql.configuration.SchemaConfiguration
 import com.apurebase.kgraphql.schema.execution.Executor
 import com.apurebase.kgraphql.schema.execution.GenericTypeResolver
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlin.reflect.KClass

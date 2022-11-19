@@ -1,21 +1,21 @@
 package com.apurebase.kgraphql.schema.structure
 
+import com.apurebase.kgraphql.GraphQLError
 import com.apurebase.kgraphql.request.VariablesJson
 import com.apurebase.kgraphql.schema.DefaultSchema.Companion.OPERATION_NAME_PARAM
 import com.apurebase.kgraphql.schema.directive.Directive
 import com.apurebase.kgraphql.schema.execution.Execution
+import com.apurebase.kgraphql.schema.execution.ExecutionOptions
 import com.apurebase.kgraphql.schema.execution.ExecutionPlan
 import com.apurebase.kgraphql.schema.execution.TypeCondition
-import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.*
+import com.apurebase.kgraphql.schema.model.ast.*
+import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.ExecutableDefinitionNode
 import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.ExecutableDefinitionNode.FragmentDefinitionNode
 import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.ExecutableDefinitionNode.OperationDefinitionNode
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FieldNode
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FragmentNode
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FragmentNode.FragmentSpreadNode
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FragmentNode.InlineFragmentNode
-import com.apurebase.kgraphql.GraphQLError
-import com.apurebase.kgraphql.schema.execution.ExecutionOptions
-import com.apurebase.kgraphql.schema.model.ast.*
 import java.util.*
 import kotlin.reflect.full.starProjectedType
 
@@ -25,12 +25,12 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
     private val directivesByName = schemaModel.directives.associateBy { it.name }
 
     inner class InterpreterContext(
-        val fragments: Map<String, Pair<Type, SelectionSetNode>>
+        val fragments: Map<String, Pair<Type, SelectionSetNode>>,
     ) {
         // prevent stack overflow
         private val fragmentsStack = Stack<String>()
         fun get(node: FragmentSpreadNode): Execution.Fragment? {
-            if(fragmentsStack.contains(node.name.value)) throw GraphQLError(
+            if (fragmentsStack.contains(node.name.value)) throw GraphQLError(
                 "Fragment spread circular references are not allowed",
                 node
             )
@@ -46,7 +46,11 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
         }
     }
 
-    fun createExecutionPlan(document: DocumentNode, variables: VariablesJson, options: ExecutionOptions): ExecutionPlan {
+    fun createExecutionPlan(
+        document: DocumentNode,
+        variables: VariablesJson,
+        options: ExecutionOptions,
+    ): ExecutionPlan {
         val test = document.definitions.filterIsInstance<ExecutableDefinitionNode>()
 
         val operation = test.filterIsInstance<OperationDefinitionNode>().let { operations ->
@@ -58,8 +62,9 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
                         if (it.size != operations.size) throw GraphQLError("anonymous operation must be the only defined operation")
                     }.joinToString(prefix = "[", postfix = "]")
 
-                    val operationName = variables.get(String::class, String::class.starProjectedType, OPERATION_NAME_PARAM)
-                        ?: throw GraphQLError("Must provide an operation name from: $operationNamesFound")
+                    val operationName =
+                        variables.get(String::class, String::class.starProjectedType, OPERATION_NAME_PARAM)
+                            ?: throw GraphQLError("Must provide an operation name from: $operationNamesFound")
 
                     operations.firstOrNull { it.name?.value == operationName }
                         ?: throw GraphQLError("Must provide an operation name from: $operationNamesFound, found $operationName")
@@ -69,8 +74,11 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
 
         val root = when (operation.operation) {
             OperationTypeNode.QUERY -> schemaModel.query
-            OperationTypeNode.MUTATION -> schemaModel.mutation ?: throw GraphQLError("Mutations are not supported on this schema")
-            OperationTypeNode.SUBSCRIPTION -> schemaModel.subscription ?: throw GraphQLError("Subscriptions are not supported on this schema")
+            OperationTypeNode.MUTATION -> schemaModel.mutation
+                ?: throw GraphQLError("Mutations are not supported on this schema")
+
+            OperationTypeNode.SUBSCRIPTION -> schemaModel.subscription
+                ?: throw GraphQLError("Subscriptions are not supported on this schema")
         }
 
         val fragmentDefinitionNode = test.filterIsInstance<FragmentDefinitionNode>()
@@ -79,7 +87,7 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
             val name = fragmentDef.name!!.value
 
             if (fragmentDefinitionNode.count { it.name!!.value == name } > 1) {
-                throw GraphQLError("There can be only one fragment named $name.", fragmentDef )
+                throw GraphQLError("There can be only one fragment named $name.", fragmentDef)
             }
 
             name to (type to fragmentDef.selectionSet)
@@ -100,7 +108,12 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
     private fun handleReturnType(ctx: InterpreterContext, type: Type, requestNode: FieldNode) =
         handleReturnType(ctx, type, requestNode.selectionSet, requestNode.name)
 
-    private fun handleReturnType(ctx: InterpreterContext, type: Type, selectionSet: SelectionSetNode?, propertyName: NameNode? = null): List<Execution> {
+    private fun handleReturnType(
+        ctx: InterpreterContext,
+        type: Type,
+        selectionSet: SelectionSetNode?,
+        propertyName: NameNode? = null,
+    ): List<Execution> {
         val children = mutableListOf<Execution>()
 
         if (!selectionSet?.selections.isNullOrEmpty()) {
@@ -120,15 +133,22 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
     private fun handleReturnTypeChildOrFragment(node: SelectionNode, returnType: Type, ctx: InterpreterContext) =
         returnType.unwrapped().handleSelectionFieldOrFragment(node, ctx)
 
-    private fun findFragmentType(fragment: FragmentNode, ctx: InterpreterContext, enclosingType: Type): Execution.Fragment = when(fragment) {
+    private fun findFragmentType(
+        fragment: FragmentNode,
+        ctx: InterpreterContext,
+        enclosingType: Type,
+    ): Execution.Fragment = when (fragment) {
         is FragmentSpreadNode -> {
             ctx.get(fragment) ?: throw throwUnknownFragmentTypeEx(fragment)
         }
+
         is InlineFragmentNode -> {
-            val type =if (fragment.directives?.isNotEmpty() == true) {
+            val type = if (fragment.directives?.isNotEmpty() == true) {
                 enclosingType
             } else {
-                schemaModel.queryTypesByName[fragment.typeCondition?.name?.value] ?: throw throwUnknownFragmentTypeEx(fragment)
+                schemaModel.queryTypesByName[fragment.typeCondition?.name?.value] ?: throw throwUnknownFragmentTypeEx(
+                    fragment
+                )
             }
             Execution.Fragment(
                 selectionNode = fragment,
@@ -139,17 +159,23 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
         }
     }
 
-    private fun Type.handleSelectionFieldOrFragment(node: SelectionNode, ctx: InterpreterContext): Execution = when (node) {
-        is FragmentNode -> findFragmentType(node, ctx, this)
-        is FieldNode -> handleSelection(node, ctx)
-    }
+    private fun Type.handleSelectionFieldOrFragment(node: SelectionNode, ctx: InterpreterContext): Execution =
+        when (node) {
+            is FragmentNode -> findFragmentType(node, ctx, this)
+            is FieldNode -> handleSelection(node, ctx)
+        }
 
-    private fun Type.handleSelection(node: FieldNode, ctx: InterpreterContext, variables: List<VariableDefinitionNode>? = null): Execution.Node {
+    private fun Type.handleSelection(
+        node: FieldNode,
+        ctx: InterpreterContext,
+        variables: List<VariableDefinitionNode>? = null,
+    ): Execution.Node {
         return when (val field = this[node.name.value]) {
             null -> throw GraphQLError(
                 "Property ${node.name.value} on $name does not exist",
                 node
             )
+
             is Field.Union<*> -> handleUnion(field, node, ctx)
             else -> {
                 validatePropertyArguments(this, field, node)
@@ -168,31 +194,40 @@ class RequestInterpreter(val schemaModel: SchemaModel) {
         }
     }
 
-    private fun <T> handleUnion(field: Field.Union<T>, selectionNode: FieldNode, ctx: InterpreterContext): Execution.Union {
+    private fun <T> handleUnion(
+        field: Field.Union<T>,
+        selectionNode: FieldNode,
+        ctx: InterpreterContext,
+    ): Execution.Union {
         validateUnionRequest(field, selectionNode)
 
-        val unionMembersChildren: Map<Type, List<Execution>> = field.returnType.possibleTypes.associateWith { possibleType ->
-            val selections = selectionNode.selectionSet?.selections
+        val unionMembersChildren: Map<Type, List<Execution>> =
+            field.returnType.possibleTypes.associateWith { possibleType ->
+                val selections = selectionNode.selectionSet?.selections
 
-            val a = selections?.filterIsInstance<FragmentSpreadNode>()?.firstOrNull {
-                ctx.fragments[it.name.value]?.first?.name == possibleType.name
+                val a = selections?.filterIsInstance<FragmentSpreadNode>()?.firstOrNull {
+                    ctx.fragments[it.name.value]?.first?.name == possibleType.name
+                }
+
+                if (a != null) return@associateWith handleReturnType(
+                    ctx,
+                    possibleType,
+                    ctx.fragments.getValue(a.name.value).second
+                )
+
+                val b = selections?.filterIsInstance<InlineFragmentNode>()?.find {
+                    possibleType.name == it.typeCondition?.name?.value
+                }
+
+                if (b != null) return@associateWith handleReturnType(ctx, possibleType, b.selectionSet)
+
+                throw GraphQLError(
+                    "Missing type argument for type ${possibleType.name}",
+                    selectionNode
+                )
             }
 
-            if (a != null) return@associateWith handleReturnType(ctx, possibleType, ctx.fragments.getValue(a.name.value).second)
-
-            val b = selections?.filterIsInstance<InlineFragmentNode>()?.find {
-                possibleType.name == it.typeCondition?.name?.value
-            }
-
-            if (b != null) return@associateWith handleReturnType(ctx, possibleType, b.selectionSet)
-
-            throw GraphQLError(
-                "Missing type argument for type ${possibleType.name}",
-                selectionNode
-            )
-        }
-
-        return Execution.Union (
+        return Execution.Union(
             node = selectionNode,
             unionField = field,
             memberChildren = unionMembersChildren,

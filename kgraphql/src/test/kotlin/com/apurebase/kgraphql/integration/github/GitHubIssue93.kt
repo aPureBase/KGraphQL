@@ -21,11 +21,13 @@ class GitHubIssue93 {
         }
 
         invoking {
-            schema.executeBlocking("""
+            schema.executeBlocking(
+                """
         {
             main(input: { valu1: "Hello" })
         }
-    """)
+    """
+            )
         } shouldThrow GraphQLError::class with {
             message shouldBeEqualTo "Constructor Parameter 'valu1' can not be found in 'MyInput'"
         }

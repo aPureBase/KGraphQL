@@ -11,11 +11,11 @@ class EnumDSL<T : Enum<T>>(kClass: KClass<T>) : ItemDSL() {
 
     val valueDefinitions = mutableMapOf<T, EnumValueDSL<T>>()
 
-    fun value(value : T, block : EnumValueDSL<T>.() -> Unit){
+    fun value(value: T, block: EnumValueDSL<T>.() -> Unit) {
         valueDefinitions[value] = EnumValueDSL(value).apply(block)
     }
 
-    infix fun T.describe(content: String){
+    infix fun T.describe(content: String) {
         valueDefinitions[this] = EnumValueDSL(this).apply {
             description = content
         }

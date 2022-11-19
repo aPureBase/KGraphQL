@@ -6,7 +6,7 @@ import com.apurebase.kgraphql.schema.model.ast.Source
 internal fun syntaxError(
     source: Source,
     position: Int,
-    description: String
+    description: String,
 ) = GraphQLError(
     message = "Syntax Error: $description",
     nodes = null,

@@ -8,17 +8,17 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
 
-data class SchemaModel (
+data class SchemaModel(
     val query: Type,
     val mutation: Type?,
     val subscription: Type?,
     val enums: Map<KClass<out Enum<*>>, Type.Enum<out Enum<*>>>,
-    val scalars : Map<KClass<*>, Type.Scalar<*>>,
-    val unions : List<Type.Union>,
-    val allTypes : List<Type>,
+    val scalars: Map<KClass<*>, Type.Scalar<*>>,
+    val unions: List<Type.Union>,
+    val allTypes: List<Type>,
     val queryTypes: Map<KClass<*>, Type>,
     val inputTypes: Map<KClass<*>, Type>,
-    override val directives: List<Directive>
+    override val directives: List<Directive>,
 ) : __Schema {
 
     val allTypesByName = allTypes.associateBy { it.name }
@@ -31,11 +31,11 @@ data class SchemaModel (
 
     private fun toTypeList(): List<__Type> {
         var list = allTypes.toList()
-                //workaround on the fact that Double and Float are treated as GraphQL Float
-                .filterNot { it is Type.Scalar<*> && it.kClass == Float::class }
-                .filterNot { it.kClass?.findAnnotation<NotIntrospected>() != null }
-                //query and mutation must be present in introspection 'types' field for introspection tools
-                .plus(query)
+            //workaround on the fact that Double and Float are treated as GraphQL Float
+            .filterNot { it is Type.Scalar<*> && it.kClass == Float::class }
+            .filterNot { it.kClass?.findAnnotation<NotIntrospected>() != null }
+            //query and mutation must be present in introspection 'types' field for introspection tools
+            .plus(query)
         if (mutation != null) list = list.plus(mutation)
         if (subscription != null) list = list.plus(subscription)
         return list

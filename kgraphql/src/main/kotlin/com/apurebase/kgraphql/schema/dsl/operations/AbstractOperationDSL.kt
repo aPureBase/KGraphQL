@@ -10,7 +10,7 @@ import kotlin.reflect.KType
 
 
 abstract class AbstractOperationDSL(
-    val name: String
+    val name: String,
 ) : LimitedAccessItemDSL<Nothing>(),
     ResolverDSL.Target {
 
@@ -44,21 +44,25 @@ abstract class AbstractOperationDSL(
 
     fun <T, R, E> resolver(function: suspend (R, E) -> T) = resolver(FunctionWrapper.on(function))
 
-    fun <T, R, E, W> resolver(function: suspend (R, E ,W ) -> T) = resolver(FunctionWrapper.on(function))
+    fun <T, R, E, W> resolver(function: suspend (R, E, W) -> T) = resolver(FunctionWrapper.on(function))
 
     fun <T, R, E, W, Q> resolver(function: suspend (R, E, W, Q) -> T) = resolver(FunctionWrapper.on(function))
 
     fun <T, R, E, W, Q, A> resolver(function: suspend (R, E, W, Q, A) -> T) = resolver(FunctionWrapper.on(function))
 
-    fun <T, R, E, W, Q, A, S> resolver(function: suspend (R, E, W, Q, A, S) -> T) = resolver(FunctionWrapper.on(function))
+    fun <T, R, E, W, Q, A, S> resolver(function: suspend (R, E, W, Q, A, S) -> T) =
+        resolver(FunctionWrapper.on(function))
 
-    fun <T, R, E, W, Q, A, S, B> resolver(function: suspend (R, E, W, Q, A, S, B) -> T) = resolver(FunctionWrapper.on(function))
+    fun <T, R, E, W, Q, A, S, B> resolver(function: suspend (R, E, W, Q, A, S, B) -> T) =
+        resolver(FunctionWrapper.on(function))
 
-    fun <T, R, E, W, Q, A, S, B, U> resolver(function: suspend (R, E, W, Q, A, S, B, U) -> T) = resolver(FunctionWrapper.on(function))
+    fun <T, R, E, W, Q, A, S, B, U> resolver(function: suspend (R, E, W, Q, A, S, B, U) -> T) =
+        resolver(FunctionWrapper.on(function))
 
-    fun <T, R, E, W, Q, A, S, B, U, C> resolver(function: suspend (R, E, W, Q, A, S, B, U, C) -> T) = resolver(FunctionWrapper.on(function))
+    fun <T, R, E, W, Q, A, S, B, U, C> resolver(function: suspend (R, E, W, Q, A, S, B, U, C) -> T) =
+        resolver(FunctionWrapper.on(function))
 
-    fun accessRule(rule: (Context) -> Exception?){
+    fun accessRule(rule: (Context) -> Exception?) {
         val accessRuleAdapter: (Nothing?, Context) -> Exception? = { _, ctx -> rule(ctx) }
         this.accessRuleBlock = accessRuleAdapter
     }

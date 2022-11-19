@@ -1,30 +1,31 @@
 package com.apurebase.kgraphql.schema.execution
 
 import com.apurebase.kgraphql.Context
+import com.apurebase.kgraphql.GraphQLError
 import com.apurebase.kgraphql.request.Variables
 import com.apurebase.kgraphql.schema.DefaultSchema
 import com.apurebase.kgraphql.schema.introspection.TypeKind
 import com.apurebase.kgraphql.schema.model.ast.ArgumentNodes
-import com.apurebase.kgraphql.schema.model.ast.ValueNode.*
-import com.apurebase.kgraphql.GraphQLError
+import com.apurebase.kgraphql.schema.model.ast.ValueNode.ListValueNode
+import com.apurebase.kgraphql.schema.model.ast.ValueNode.ObjectValueNode
 import com.apurebase.kgraphql.schema.structure.InputValue
 
 
-internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(schema) {
+internal class ArgumentsHandler(schema: DefaultSchema) : ArgumentTransformer(schema) {
 
-    fun transformArguments (
+    fun transformArguments(
         funName: String,
         inputValues: List<InputValue<*>>,
         args: ArgumentNodes?,
         variables: Variables,
         executionNode: Execution,
-        requestContext: Context
-    ) : List<Any?>{
+        requestContext: Context,
+    ): List<Any?> {
         val unsupportedArguments = args?.filter { arg ->
             inputValues.none { value -> value.name == arg.key }
         }
 
-        if(unsupportedArguments?.isNotEmpty() == true){
+        if (unsupportedArguments?.isNotEmpty() == true) {
             throw GraphQLError(
                 "$funName does support arguments ${inputValues.map { it.name }}. found arguments ${args.keys}",
                 executionNode.selectionNode
@@ -45,14 +46,17 @@ internal class ArgumentsHandler(schema : DefaultSchema) : ArgumentTransformer(sc
                         executionNode.selectionNode
                     )
                 }
+
                 value is ListValueNode && parameter.type.isList() -> {
                     value.values.map { element ->
                         transformCollectionElementValue(parameter, element, variables)
                     }
                 }
+
                 value is ObjectValueNode && parameter.type.isNotList() -> {
                     transformPropertyObjectValue(parameter, value, variables)
                 }
+
                 else -> {
                     val transformedValue = transformPropertyValue(parameter, value!!, variables)
                     if (transformedValue == null && parameter.type.isNotNullable()) {

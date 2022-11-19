@@ -6,5 +6,5 @@ data class EnumValueDefinitionNode(
     override val loc: Location?,
     val name: NameNode,
     val description: StringValueNode?,
-    val directives: List<DirectiveNode>?
-): ASTNode()
+    val directives: List<DirectiveNode>?,
+) : ASTNode()

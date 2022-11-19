@@ -27,6 +27,7 @@ fun merge(key: String, node: JsonNode?, get: (String) -> JsonNode?, set: (String
                 check(existingNode is ObjectNode) { "trying to merge object with simple node for $key" }
                 existingNode.merge(node)
             }
+
             existingNode is ObjectNode -> throw IllegalStateException("trying to merge simple node with object node for $key")
             node != existingNode -> throw IllegalStateException("trying to merge different simple nodes for $key")
         }

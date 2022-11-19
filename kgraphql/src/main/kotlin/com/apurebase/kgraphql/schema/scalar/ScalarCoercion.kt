@@ -11,7 +11,7 @@ interface ScalarCoercion<Scalar, Raw> {
     /**
      * strategy for scalar serialization
      */
-    fun serialize(instance: Scalar) : Raw
+    fun serialize(instance: Scalar): Raw
 
     /**
      * strategy for scalar deserialization

@@ -1,10 +1,7 @@
 package com.apurebase.kgraphql.specification.language
 
+import com.apurebase.kgraphql.*
 import com.apurebase.kgraphql.Actor
-import com.apurebase.kgraphql.Specification
-import com.apurebase.kgraphql.defaultSchema
-import com.apurebase.kgraphql.deserialize
-import com.apurebase.kgraphql.extract
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.jupiter.api.Test
@@ -12,7 +9,7 @@ import org.junit.jupiter.api.Test
 @Specification("2.5 Fields")
 class FieldsSpecificationTest {
 
-    data class ActorWrapper(val id : String, val actualActor: Actor)
+    data class ActorWrapper(val id: String, val actualActor: Actor)
 
     val age = 432
 

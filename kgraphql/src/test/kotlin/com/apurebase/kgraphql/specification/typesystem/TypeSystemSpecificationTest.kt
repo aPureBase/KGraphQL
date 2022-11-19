@@ -14,8 +14,8 @@ class TypeSystemSpecificationTest {
     class __Type
 
     @Test
-    fun `All types within a GraphQL schema must have unique names`(){
-        expect<SchemaException>("Cannot add Object type with duplicated name String"){
+    fun `All types within a GraphQL schema must have unique names`() {
+        expect<SchemaException>("Cannot add Object type with duplicated name String") {
             schema {
                 type<TypeSystemSpecificationTest.String>()
             }
@@ -23,8 +23,8 @@ class TypeSystemSpecificationTest {
     }
 
     @Test
-    fun `All types and directives defined within a schema must not have a name which begins with __`(){
-        expect<SchemaException>("Type name starting with \"__\" are excluded for introspection system"){
+    fun `All types and directives defined within a schema must not have a name which begins with __`() {
+        expect<SchemaException>("Type name starting with \"__\" are excluded for introspection system") {
             schema {
                 type<__Type>()
             }

@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test
 class GitHubIssue141 {
 
     sealed class TopUnion(val field: String) {
-        class Union1(val names: List<String>): TopUnion("union1")
-        class Union2(val numbers: List<Int>): TopUnion("union2")
+        class Union1(val names: List<String>) : TopUnion("union1")
+        class Union2(val numbers: List<Int>) : TopUnion("union2")
     }
 
     @Test
@@ -26,7 +26,8 @@ class GitHubIssue141 {
                 }
             }
 
-        }.executeBlocking("""
+        }.executeBlocking(
+            """
             {
                 unions(isOne: true) {
                     ...abc
@@ -36,7 +37,8 @@ class GitHubIssue141 {
                 ... on Union1 { names }
                 ... on Union2 { numbers }
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
             .also(::println)
             .deserialize()
             .extract<List<String>>("data/unions/names") shouldBeEqualTo listOf("name1", "name2")

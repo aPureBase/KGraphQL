@@ -2,7 +2,7 @@ package com.apurebase.kgraphql.schema.model.ast
 
 import com.apurebase.kgraphql.schema.model.ast.TypeNode.NamedTypeNode
 
-sealed class SelectionNode(val parent: SelectionNode?): ASTNode() {
+sealed class SelectionNode(val parent: SelectionNode?) : ASTNode() {
 
     abstract val fullPath: String
 
@@ -11,8 +11,8 @@ sealed class SelectionNode(val parent: SelectionNode?): ASTNode() {
         val alias: NameNode?,
         val name: NameNode,
         val arguments: List<ArgumentNode>?,
-        val directives: List<DirectiveNode>?
-    ): SelectionNode(parent) {
+        val directives: List<DirectiveNode>?,
+    ) : SelectionNode(parent) {
         private var _selectionSet: SelectionSetNode? = null
         private var _loc: Location? = null
 
@@ -31,8 +31,8 @@ sealed class SelectionNode(val parent: SelectionNode?): ASTNode() {
 
     }
 
-    sealed class FragmentNode(parent: SelectionNode?, val directives: List<DirectiveNode>?): SelectionNode(parent) {
-        override val fullPath get () = parent?.fullPath?.let {"$it."} ?: ""
+    sealed class FragmentNode(parent: SelectionNode?, val directives: List<DirectiveNode>?) : SelectionNode(parent) {
+        override val fullPath get() = parent?.fullPath?.let { "$it." } ?: ""
 
         /**
          * ...FragmentName
@@ -41,8 +41,8 @@ sealed class SelectionNode(val parent: SelectionNode?): ASTNode() {
             parent: SelectionNode?,
             override val loc: Location?,
             val name: NameNode,
-            directives: List<DirectiveNode>?
-        ): FragmentNode(parent, directives)
+            directives: List<DirectiveNode>?,
+        ) : FragmentNode(parent, directives)
 
         /**
          * ... on Type {
@@ -53,8 +53,8 @@ sealed class SelectionNode(val parent: SelectionNode?): ASTNode() {
         class InlineFragmentNode(
             parent: SelectionNode?,
             val typeCondition: NamedTypeNode?,
-            directives: List<DirectiveNode>?
-        ): FragmentNode(parent, directives) {
+            directives: List<DirectiveNode>?,
+        ) : FragmentNode(parent, directives) {
             private var _selectionSet: SelectionSetNode? = null
             private var _loc: Location? = null
 

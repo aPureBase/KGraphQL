@@ -69,12 +69,12 @@ open class Parser {
                 "extend" -> throw NotImplementedError("Extend is not supported")
                 else -> throw unexpected()
             }
+
             peek(BRACE_L) -> parseOperationDefinition()
             peekDescription() -> parseTypeSystemDefinition()
             else -> throw unexpected()
         }
     }
-
 
 
     /**
@@ -341,6 +341,7 @@ open class Parser {
                     loc = loc(token)
                 )
             }
+
             FLOAT -> {
                 lexer.advance()
                 ValueNode.DoubleValueNode(
@@ -348,6 +349,7 @@ open class Parser {
                     loc = loc(token)
                 )
             }
+
             STRING, BLOCK_STRING -> parseStringLiteral()
             NAME -> {
                 if (token.value == "true" || token.value == "false") {
@@ -367,6 +369,7 @@ open class Parser {
                     )
                 }
             }
+
             DOLLAR -> if (!isConst) parseVariable() else throw unexpected()
             else -> throw unexpected()
         }
@@ -947,9 +950,11 @@ open class Parser {
         throw syntaxError(
             lexer.source,
             token.start,
-            "Expected ${getTokenKindDesc(kind)}, found ${getTokenDesc(
-                token
-            )}."
+            "Expected ${getTokenKindDesc(kind)}, found ${
+                getTokenDesc(
+                    token
+                )
+            }."
         )
     }
 
@@ -1015,7 +1020,7 @@ open class Parser {
     private fun <T> any(
         openKind: TokenKindEnum,
         parseFn: () -> T,
-        closeKind: TokenKindEnum
+        closeKind: TokenKindEnum,
     ): MutableList<T> {
         expectToken(openKind)
         val nodes = mutableListOf<T>()
@@ -1035,7 +1040,7 @@ open class Parser {
     private fun <T> optionalMany(
         openKind: TokenKindEnum,
         parseFn: () -> T,
-        closeKind: TokenKindEnum
+        closeKind: TokenKindEnum,
     ): MutableList<T> {
         if (expectOptionalToken(openKind) != null) {
             val nodes = mutableListOf<T>()
@@ -1056,7 +1061,7 @@ open class Parser {
     private fun <T> many(
         openKind: TokenKindEnum,
         parseFn: () -> T,
-        closeKind: TokenKindEnum
+        closeKind: TokenKindEnum,
     ): MutableList<T> {
         expectToken(openKind)
         val nodes = mutableListOf<T>()
@@ -1095,7 +1100,7 @@ open class Parser {
          * This option is provided to ease adoption of the final SDL specification
          * and will be removed in v16.
          */
-        val allowLegacySDLImplementsInterfaces: Boolean = false
+        val allowLegacySDLImplementsInterfaces: Boolean = false,
     )
 
     companion object {

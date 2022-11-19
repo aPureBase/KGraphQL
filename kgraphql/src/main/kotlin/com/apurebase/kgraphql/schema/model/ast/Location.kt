@@ -28,7 +28,7 @@ class Location(
     /**
      * The Source document the AST represents.
      */
-    val source: Source
+    val source: Source,
 ) {
 
     constructor(startToken: Token, endToken: Token, source: Source) : this(

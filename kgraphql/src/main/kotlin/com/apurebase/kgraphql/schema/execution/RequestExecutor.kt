@@ -5,5 +5,5 @@ import com.apurebase.kgraphql.request.VariablesJson
 
 
 interface RequestExecutor {
-    suspend fun suspendExecute(plan : ExecutionPlan, variables: VariablesJson, context: Context): String
+    suspend fun suspendExecute(plan: ExecutionPlan, variables: VariablesJson, context: Context): String
 }

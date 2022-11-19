@@ -14,7 +14,7 @@ import kotlin.reflect.full.isSubclassOf
  * Intermediate, mutable data structure used to prepare [SchemaDefinition]
  * Performs basic validation (names duplication etc.) when methods for adding schema components are invoked
  */
-data class MutableSchemaDefinition (
+data class MutableSchemaDefinition(
     private val objects: ArrayList<TypeDef.Object<*>> = arrayListOf(
         TypeDef.Object(__Schema::class.defaultKQLTypeName(), __Schema::class),
         create__TypeDefinition(),
@@ -30,16 +30,16 @@ data class MutableSchemaDefinition (
         BUILT_IN_TYPE.INT,
         BUILT_IN_TYPE.LONG,
 
-    ),
+        ),
     private val mutations: ArrayList<MutationDef<*>> = arrayListOf(),
     private val subscriptions: ArrayList<SubscriptionDef<*>> = arrayListOf(),
-        private val enums: ArrayList<TypeDef.Enumeration<*>> = arrayListOf(
-        TypeDef.Enumeration (
+    private val enums: ArrayList<TypeDef.Enumeration<*>> = arrayListOf(
+        TypeDef.Enumeration(
             "__" + TypeKind::class.defaultKQLTypeName(),
             TypeKind::class,
             enumValues<TypeKind>().map { EnumValueDef(it) }
         ),
-        TypeDef.Enumeration (
+        TypeDef.Enumeration(
             "__" + DirectiveLocation::class.defaultKQLTypeName(),
             DirectiveLocation::class,
             enumValues<DirectiveLocation>().map { EnumValueDef(it) }
@@ -50,17 +50,17 @@ data class MutableSchemaDefinition (
         Directive.SKIP,
         Directive.INCLUDE
     ),
-    private val inputObjects: ArrayList<TypeDef.Input<*>> = arrayListOf()
+    private val inputObjects: ArrayList<TypeDef.Input<*>> = arrayListOf(),
 ) {
 
-    val unionsMonitor : List<TypeDef.Union>
+    val unionsMonitor: List<TypeDef.Union>
         get() = unions
 
-    fun toSchemaDefinition() : SchemaDefinition {
+    fun toSchemaDefinition(): SchemaDefinition {
         val compiledObjects = ArrayList(this.objects)
 
         unions.forEach { union ->
-            if(union.members.isEmpty()){
+            if (union.members.isEmpty()) {
                 throw SchemaException("The union type '${union.name}' has no possible types defined, requires at least one. Please refer to https://kgraphql.io/Reference/Type%20System/unions/")
             }
             union.members.forEach { member ->
@@ -68,16 +68,29 @@ data class MutableSchemaDefinition (
             }
         }
 
-        return SchemaDefinition(compiledObjects, queries, scalars, mutations, subscriptions, enums, unions, directives, inputObjects)
+        return SchemaDefinition(
+            compiledObjects,
+            queries,
+            scalars,
+            mutations,
+            subscriptions,
+            enums,
+            unions,
+            directives,
+            inputObjects
+        )
     }
 
-    private fun validateUnionMember(union: TypeDef.Union,
-                                    member: KClass<*>,
-                                    compiledObjects: ArrayList<TypeDef.Object<*>>) {
+    private fun validateUnionMember(
+        union: TypeDef.Union,
+        member: KClass<*>,
+        compiledObjects: ArrayList<TypeDef.Object<*>>,
+    ) {
         if (scalars.any { it.kClass == member } || enums.any { it.kClass == member }) {
             throw SchemaException(
                 "The member types of a Union type must all be Object base types; " +
-                        "Scalar, Interface and Union types may not be member types of a Union")
+                        "Scalar, Interface and Union types may not be member types of a Union"
+            )
         }
 
         if (member.isSubclassOf(Collection::class)) {
@@ -93,22 +106,22 @@ data class MutableSchemaDefinition (
         }
     }
 
-    fun addQuery(query : QueryDef<*>){
-        if(query.checkEqualName(queries)){
+    fun addQuery(query: QueryDef<*>) {
+        if (query.checkEqualName(queries)) {
             throw SchemaException("Cannot add query with duplicated name ${query.name}")
         }
         queries.add(query)
     }
 
-    fun addMutation(mutation : MutationDef<*>){
-        if(mutation.checkEqualName(mutations)){
+    fun addMutation(mutation: MutationDef<*>) {
+        if (mutation.checkEqualName(mutations)) {
             throw SchemaException("Cannot add mutation with duplicated name ${mutation.name}")
         }
         mutations.add(mutation)
     }
 
-    fun addSubscription(subscription: SubscriptionDef<*>){
-        if(subscription.checkEqualName(subscriptions)){
+    fun addSubscription(subscription: SubscriptionDef<*>) {
+        if (subscription.checkEqualName(subscriptions)) {
             throw SchemaException("Cannot add mutation with duplicated name ${subscription.name}")
         }
         subscriptions.add(subscription)
@@ -122,19 +135,19 @@ data class MutableSchemaDefinition (
 
     fun addUnion(union: TypeDef.Union) = addType(union, unions, "Union")
 
-    fun addInputObject(input : TypeDef.Input<*>) = addType(input, inputObjects, "Input")
+    fun addInputObject(input: TypeDef.Input<*>) = addType(input, inputObjects, "Input")
 
-    fun <T : Definition>addType(type: T, target: ArrayList<T>, typeCategory: String){
-        if(type.name.startsWith("__")){
+    fun <T : Definition> addType(type: T, target: ArrayList<T>, typeCategory: String) {
+        if (type.name.startsWith("__")) {
             throw SchemaException("Type name starting with \"__\" are excluded for introspection system")
         }
-        if(type.checkEqualName(objects, scalars, unions, enums)){
+        if (type.checkEqualName(objects, scalars, unions, enums)) {
             throw SchemaException("Cannot add $typeCategory type with duplicated name ${type.name}")
         }
         target.add(type)
     }
 
-    private fun Definition.checkEqualName(vararg collections: List<Definition>) : Boolean {
+    private fun Definition.checkEqualName(vararg collections: List<Definition>): Boolean {
         return collections.fold(false, { acc, list -> acc || list.any { it.equalName(this) } })
     }
 

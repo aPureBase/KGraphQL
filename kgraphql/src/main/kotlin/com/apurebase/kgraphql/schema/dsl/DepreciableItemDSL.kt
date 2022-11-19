@@ -7,7 +7,7 @@ abstract class DepreciableItemDSL : ItemDSL() {
 
     internal var deprecationReason: String? = null
 
-    infix fun deprecate(reason: String?){
+    infix fun deprecate(reason: String?) {
         isDeprecated = true
         deprecationReason = reason
     }

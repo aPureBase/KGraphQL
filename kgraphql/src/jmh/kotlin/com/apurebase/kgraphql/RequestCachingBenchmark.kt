@@ -23,10 +23,10 @@ open class RequestCachingBenchmark {
     @Param("true", "false")
     var caching = true
 
-    lateinit var schema : Schema
+    lateinit var schema: Schema
 
     @Setup
-    fun setup(){
+    fun setup() {
         schema = BenchmarkSchema.create {
             configure {
                 useCachingDocumentParser = caching
@@ -35,7 +35,7 @@ open class RequestCachingBenchmark {
     }
 
     @Benchmark
-    fun benchmark() : String {
+    fun benchmark(): String {
         return schema.execute("{one{name, quantity, active}, two(name : \"FELLA\"){range{start, endInclusive}}, three{id}}")
     }
 }

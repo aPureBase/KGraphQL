@@ -5,7 +5,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.actor
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 
 class DataLoader<K, V>(private val batchLoader: suspend (List<K>) -> Map<K, V?>) {
 

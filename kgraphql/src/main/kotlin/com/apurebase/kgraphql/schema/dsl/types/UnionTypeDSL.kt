@@ -10,11 +10,11 @@ class UnionTypeDSL() : ItemDSL() {
 
     var subTypeBlock: TypeDSL<*>.() -> Unit = {}
 
-    fun <T : Any>type(kClass : KClass<T>){
+    fun <T : Any> type(kClass: KClass<T>) {
         possibleTypes.add(kClass)
     }
 
-    inline fun <reified T : Any>type(){
+    inline fun <reified T : Any> type() {
         type(T::class)
     }
 }

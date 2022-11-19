@@ -7,5 +7,5 @@ import com.apurebase.kgraphql.configuration.SchemaConfiguration
  */
 data class ExecutionOptions(
     val executor: Executor? = null,
-    val timeout: Long? = null
+    val timeout: Long? = null,
 )

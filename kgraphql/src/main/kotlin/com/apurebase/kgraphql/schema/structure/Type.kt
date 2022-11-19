@@ -2,12 +2,7 @@ package com.apurebase.kgraphql.schema.structure
 
 import com.apurebase.kgraphql.Context
 import com.apurebase.kgraphql.schema.execution.Execution
-import com.apurebase.kgraphql.schema.introspection.TypeKind
-import com.apurebase.kgraphql.schema.introspection.__EnumValue
-import com.apurebase.kgraphql.schema.introspection.__Field
-import com.apurebase.kgraphql.schema.introspection.__InputValue
-import com.apurebase.kgraphql.schema.introspection.__Type
-import com.apurebase.kgraphql.schema.introspection.asString
+import com.apurebase.kgraphql.schema.introspection.*
 import com.apurebase.kgraphql.schema.model.TypeDef
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -17,11 +12,11 @@ import kotlin.reflect.full.createType
 
 interface Type : __Type {
 
-    fun hasField(name : String) : Boolean {
+    fun hasField(name: String): Boolean {
         return fields?.any { it.name == name } ?: false
     }
 
-    operator fun get(name : String) : Field? = null
+    operator fun get(name: String): Field? = null
 
     fun unwrapped(): Type = when (kind) {
         TypeKind.NON_NULL, TypeKind.LIST -> (ofType as Type).unwrapped()
@@ -32,34 +27,38 @@ interface Type : __Type {
 
     fun isNotNullable() = this.kind == TypeKind.NON_NULL
 
-    fun unwrapList() : Type = when(kind) {
+    fun unwrapList(): Type = when (kind) {
         TypeKind.LIST -> ofType as Type
         else -> (ofType as Type?)?.unwrapList() ?: throw NoSuchElementException("this type does not wrap list element")
     }
 
-    fun isList() : Boolean = when {
+    fun isList(): Boolean = when {
         kind == TypeKind.LIST -> true
         ofType == null -> false
         else -> (ofType as Type).isList()
     }
 
-    fun isNotList() : Boolean = !isList()
+    fun isNotList(): Boolean = !isList()
 
     fun isElementNullable() = isList() && unwrapList().kind != TypeKind.NON_NULL
 
-    fun isInstance(value : Any?) : Boolean = kClass?.isInstance(value) ?: false
+    fun isInstance(value: Any?): Boolean = kClass?.isInstance(value) ?: false
 
     fun toKType(): KType {
-        val unwrappedKClass : KClass<*> = unwrapped().kClass ?: throw IllegalArgumentException("This type cannot be represented as KType")
+        val unwrappedKClass: KClass<*> =
+            unwrapped().kClass ?: throw IllegalArgumentException("This type cannot be represented as KType")
 
-        return if(isList()){
-            List::class.createType(listOf(KTypeProjection.covariant(unwrappedKClass.createType(nullable = isElementNullable()))), nullable = isNullable())
+        return if (isList()) {
+            List::class.createType(
+                listOf(KTypeProjection.covariant(unwrappedKClass.createType(nullable = isElementNullable()))),
+                nullable = isNullable()
+            )
         } else {
             unwrappedKClass.createType(nullable = isNullable())
         }
     }
 
-    val kClass : KClass<*>?
+    val kClass: KClass<*>?
 
     abstract class ComplexType(val allFields: List<Field>) : Type {
         val fieldsByName = allFields.associateBy { it.name }
@@ -71,11 +70,11 @@ interface Type : __Type {
         override fun get(name: String): Field? = fieldsByName[name]
     }
 
-    class OperationObject (
-            override val name: String,
-            override val description: String,
-            fields: List<Field>
-    ) : ComplexType(fields){
+    class OperationObject(
+        override val name: String,
+        override val description: String,
+        fields: List<Field>,
+    ) : ComplexType(fields) {
 
         override val kClass: KClass<*>? = null
 
@@ -95,9 +94,9 @@ interface Type : __Type {
     }
 
     class Object<T : Any>(
-            private val definition: TypeDef.Object<T>,
-            fields: List<Field> = emptyList(),
-            override val interfaces: List<Type>? = emptyList()
+        private val definition: TypeDef.Object<T>,
+        fields: List<Field> = emptyList(),
+        override val interfaces: List<Type>? = emptyList(),
     ) : ComplexType(fields) {
 
         override val kClass = definition.kClass
@@ -116,13 +115,13 @@ interface Type : __Type {
 
         override val possibleTypes: List<__Type>? = null
 
-        fun withInterfaces(interfaces : List<Type>) = Object(this.definition, this.allFields, interfaces)
+        fun withInterfaces(interfaces: List<Type>) = Object(this.definition, this.allFields, interfaces)
     }
 
     class Interface<T : Any>(
-            private val definition: TypeDef.Object<T>,
-            fields: List<Field> = emptyList(),
-            override val possibleTypes : List<Type>? = emptyList()
+        private val definition: TypeDef.Object<T>,
+        fields: List<Field> = emptyList(),
+        override val possibleTypes: List<Type>? = emptyList(),
     ) : ComplexType(fields) {
 
         override val kClass = definition.kClass
@@ -145,7 +144,7 @@ interface Type : __Type {
     }
 
     class Scalar<T : Any>(
-            kqlType : TypeDef.Scalar<T>
+        kqlType: TypeDef.Scalar<T>,
     ) : Type {
 
         override val kClass = kqlType.kClass
@@ -172,7 +171,7 @@ interface Type : __Type {
     }
 
     class Enum<T : kotlin.Enum<T>>(
-            kqlType: TypeDef.Enumeration<T>
+        kqlType: TypeDef.Enumeration<T>,
     ) : Type {
 
         val values = kqlType.values.map { it.toEnumValue() }
@@ -199,8 +198,8 @@ interface Type : __Type {
     }
 
     class Input<T : Any>(
-            kqlType: TypeDef.Input<T>,
-            override val inputFields: List<InputValue<*>> = emptyList()
+        kqlType: TypeDef.Input<T>,
+        override val inputFields: List<InputValue<*>> = emptyList(),
     ) : Type {
 
         override val kClass = kqlType.kClass
@@ -223,9 +222,9 @@ interface Type : __Type {
     }
 
     class Union(
-            kqlType: TypeDef.Union,
-            typenameResolver: Field,
-            override val possibleTypes: List<Type>
+        kqlType: TypeDef.Union,
+        typenameResolver: Field,
+        override val possibleTypes: List<Type>,
     ) : ComplexType(listOf(typenameResolver)) {
         override val kClass: KClass<*>? = null
 

@@ -5,19 +5,19 @@ import com.apurebase.kgraphql.schema.model.FunctionWrapper
 import com.apurebase.kgraphql.schema.model.InputValueDef
 import com.apurebase.kgraphql.schema.model.PropertyDef
 import com.apurebase.kgraphql.schema.model.TypeDef
-import java.lang.IllegalArgumentException
 import kotlin.reflect.KType
 
 
-class UnionPropertyDSL<T : Any>(val name : String, block: UnionPropertyDSL<T>.() -> Unit) : LimitedAccessItemDSL<T>(), ResolverDSL.Target {
+class UnionPropertyDSL<T : Any>(val name: String, block: UnionPropertyDSL<T>.() -> Unit) : LimitedAccessItemDSL<T>(),
+    ResolverDSL.Target {
 
     init {
         block()
     }
 
-    internal lateinit var functionWrapper : FunctionWrapper<Any?>
+    internal lateinit var functionWrapper: FunctionWrapper<Any?>
 
-    lateinit var returnType : TypeID
+    lateinit var returnType: TypeID
 
     var nullable: Boolean = false
 
@@ -38,24 +38,31 @@ class UnionPropertyDSL<T : Any>(val name : String, block: UnionPropertyDSL<T>.()
 
     fun <E, W, Q, A> resolver(function: suspend (T, E, W, Q, A) -> Any?) = resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q, A, S> resolver(function: suspend (T, E, W, Q, A, S) -> Any?) = resolver(FunctionWrapper.on(function, true))
+    fun <E, W, Q, A, S> resolver(function: suspend (T, E, W, Q, A, S) -> Any?) =
+        resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q, A, S, B> resolver(function: suspend (T, E, W, Q, A, S, B) -> Any?) = resolver(FunctionWrapper.on(function, true))
+    fun <E, W, Q, A, S, B> resolver(function: suspend (T, E, W, Q, A, S, B) -> Any?) =
+        resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q, A, S, B, U> resolver(function: suspend (T, E, W, Q, A, S, B, U) -> Any?) = resolver(FunctionWrapper.on(function, true))
+    fun <E, W, Q, A, S, B, U> resolver(function: suspend (T, E, W, Q, A, S, B, U) -> Any?) =
+        resolver(FunctionWrapper.on(function, true))
 
-    fun <E, W, Q, A, S, B, U, C> resolver(function: suspend (T, E, W, Q, A, S, B, U, C) -> Any?) = resolver(FunctionWrapper.on(function, true))
+    fun <E, W, Q, A, S, B, U, C> resolver(function: suspend (T, E, W, Q, A, S, B, U, C) -> Any?) =
+        resolver(FunctionWrapper.on(function, true))
 
-    fun accessRule(rule: (T, Context) -> Exception?){
+    fun accessRule(rule: (T, Context) -> Exception?) {
 
         val accessRuleAdapter: (T?, Context) -> Exception? = { parent, ctx ->
-            if (parent != null) rule(parent, ctx) else IllegalArgumentException("Unexpected null parent of kotlin property")
+            if (parent != null) rule(
+                parent,
+                ctx
+            ) else IllegalArgumentException("Unexpected null parent of kotlin property")
         }
 
         this.accessRuleBlock = accessRuleAdapter
     }
 
-    fun toKQLProperty(union : TypeDef.Union) = PropertyDef.Union<T> (
+    fun toKQLProperty(union: TypeDef.Union) = PropertyDef.Union<T>(
         name = name,
         resolver = functionWrapper,
         union = union,

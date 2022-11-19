@@ -20,7 +20,7 @@ class DataLoaderPropertyDSLTest {
     @Test
     fun `prepare() should support multiple arguments`() {
         val schema = defaultSchema {
-            configure{
+            configure {
                 executor = Executor.DataLoaderPrepared
             }
             query("parent") {
@@ -37,7 +37,8 @@ class DataLoaderPropertyDSLTest {
                 }
             }
         }
-        val results = schema.executeBlocking("""
+        val results = schema.executeBlocking(
+            """
             {
                 parent {
                     child(a: "A", b: 1, c: "C", d: 2, e: "E", f: 3, g: "G", h: 4) {
@@ -45,13 +46,17 @@ class DataLoaderPropertyDSLTest {
                     }
                 }
             }
-            """.trimIndent()).deserialize()
+            """.trimIndent()
+        ).deserialize()
         results.extract<String>("data/parent/child/data") shouldBeEqualTo "A 1 C 2 E 3 G 4"
     }
 
     class Parent(val data: String = "")
 
-    inline fun <T: Any, reified P: Any> TypeDSL<T>.createGenericDataProperty(returnType: KType, crossinline resolver: () -> P) {
+    inline fun <T : Any, reified P : Any> TypeDSL<T>.createGenericDataProperty(
+        returnType: KType,
+        crossinline resolver: () -> P,
+    ) {
         dataProperty<T, P>("data") {
             prepare { it }
             loader { it.map { ExecutionResult.Success(resolver()) } }
@@ -61,9 +66,9 @@ class DataLoaderPropertyDSLTest {
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun `specifying return type explicitly allows generic data property creation`(){
+    fun `specifying return type explicitly allows generic data property creation`() {
         val schema = defaultSchema {
-            configure{
+            configure {
                 executor = Executor.DataLoaderPrepared
             }
             type<Scenario> {
@@ -78,12 +83,12 @@ class DataLoaderPropertyDSLTest {
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun `creation of data properties from a list`(){
+    fun `creation of data properties from a list`() {
 
         val props = listOf(Prop(typeOf<Int>()) { 0 }, Prop(typeOf<String>()) { "test" })
 
         val schema = defaultSchema {
-            configure{
+            configure {
                 executor = Executor.DataLoaderPrepared
             }
             type<Scenario> {

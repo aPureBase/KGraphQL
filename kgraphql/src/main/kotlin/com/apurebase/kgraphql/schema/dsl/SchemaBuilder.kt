@@ -33,7 +33,7 @@ class SchemaBuilder internal constructor() {
         }
     }
 
-    fun configure(block: SchemaConfigurationDSL.() -> Unit){
+    fun configure(block: SchemaConfigurationDSL.() -> Unit) {
         configuration.update(block)
     }
 
@@ -58,7 +58,7 @@ class SchemaBuilder internal constructor() {
         return mutation
     }
 
-    fun subscription(name : String, init: SubscriptionDSL.() -> Unit){
+    fun subscription(name: String, init: SubscriptionDSL.() -> Unit) {
         val subscription = SubscriptionDSL(name)
             .apply(init)
             .toKQLSubscription()
@@ -160,7 +160,7 @@ class SchemaBuilder internal constructor() {
 
         val kqlEnumValues = enumValues.map { value ->
             type.valueDefinitions[value]?.let { valueDSL ->
-                EnumValueDef (
+                EnumValueDef(
                     value = value,
                     description = valueDSL.description,
                     isDeprecated = valueDSL.isDeprecated,
@@ -174,7 +174,7 @@ class SchemaBuilder internal constructor() {
 
     inline fun <reified T : Enum<T>> enum(noinline block: (EnumDSL<T>.() -> Unit)? = null) {
         val enumValues = enumValues<T>()
-        if(enumValues.isEmpty()){
+        if (enumValues.isEmpty()) {
             throw SchemaException("Enum of type ${T::class} must have at least one value")
         } else {
             enum(T::class, enumValues<T>(), block)
@@ -191,7 +191,7 @@ class SchemaBuilder internal constructor() {
         return TypeID(name)
     }
 
-    inline fun <reified T: Any> unionType(noinline block: UnionTypeDSL.() -> Unit = {}): TypeID {
+    inline fun <reified T : Any> unionType(noinline block: UnionTypeDSL.() -> Unit = {}): TypeID {
         if (!T::class.isSealed) throw SchemaException("Can't generate a union type out of a non sealed class. '${T::class.simpleName}'")
 
         return unionType(T::class.simpleName!!) {
@@ -212,12 +212,15 @@ class SchemaBuilder internal constructor() {
         model.addInputObject(TypeDef.Input(input.name, kClass, input.description))
     }
 
-    inline fun <reified T : Any> inputType(noinline block : InputTypeDSL<T>.() -> Unit = {}) {
+    inline fun <reified T : Any> inputType(noinline block: InputTypeDSL<T>.() -> Unit = {}) {
         inputType(T::class, block)
     }
 }
 
-inline fun <T: Any, reified Raw: Any> SchemaConfigurationDSL.appendMapper(scalar: ScalarDSL<T, Raw>, kClass: KClass<T>) {
+inline fun <T : Any, reified Raw : Any> SchemaConfigurationDSL.appendMapper(
+    scalar: ScalarDSL<T, Raw>,
+    kClass: KClass<T>,
+) {
     objectMapper.registerModule(SimpleModule().addDeserializer(kClass.java, object : UsesDeserializer<T>() {
         override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): T? {
             return scalar.deserialize?.invoke(p.readValueAs(Raw::class.java))

@@ -23,7 +23,18 @@ class GitHubIssue75 {
             }
         }
     }
-    data class Span(val traceID: String, val spanID: String, val parentSpanID: String?, val duration: Int, val startTime: Long, val operationName: String, val serviceName: String, val logs: ArrayList<LogPoint>?, val tags: ArrayList<Tag>?) {
+
+    data class Span(
+        val traceID: String,
+        val spanID: String,
+        val parentSpanID: String?,
+        val duration: Int,
+        val startTime: Long,
+        val operationName: String,
+        val serviceName: String,
+        val logs: ArrayList<LogPoint>?,
+        val tags: ArrayList<Tag>?,
+    ) {
         companion object {
             fun fromSearchHit(hit: SearchHit) = hit.spanData
         }
@@ -98,12 +109,13 @@ class GitHubIssue75 {
                         )
                     )
                 }.withArgs {
-                    arg<String> { name = "traceID"}
+                    arg<String> { name = "traceID" }
                 }
             }
         }
 
-        schema.executeBlocking("""
+        schema.executeBlocking(
+            """
             query findTrace(${'$'}traceID: String!) {
               findTrace(traceID: ${'$'}traceID) {
                 traceID
@@ -119,6 +131,7 @@ class GitHubIssue75 {
                 __typename
               }
             }
-        """, "{\"traceID\": \"646851f15cb2dad1\"}").let(::println)
+        """, "{\"traceID\": \"646851f15cb2dad1\"}"
+        ).let(::println)
     }
 }

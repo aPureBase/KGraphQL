@@ -21,10 +21,12 @@ fun validatePropertyArguments(parentType: Type, field: Field, requestNode: Field
 
 fun Field.validateArguments(selectionArgs: List<ArgumentNode>?, parentTypeName: String?): List<ValidationException> {
     if (!(this.arguments.isNotEmpty() || selectionArgs?.isNotEmpty() != true)) {
-        return listOf(ValidationException(
-            message = "Property $name on type $parentTypeName has no arguments, found: ${selectionArgs.map { it.name.value }}",
-            nodes = selectionArgs
-        ))
+        return listOf(
+            ValidationException(
+                message = "Property $name on type $parentTypeName has no arguments, found: ${selectionArgs.map { it.name.value }}",
+                nodes = selectionArgs
+            )
+        )
     }
 
     val exceptions = mutableListOf<ValidationException>()
@@ -36,7 +38,7 @@ fun Field.validateArguments(selectionArgs: List<ArgumentNode>?, parentTypeName: 
         exceptions.add(
             ValidationException(
                 message = "$name does support arguments ${arguments.map { it.name }}. " +
-                          "Found arguments ${selectionArgs.map { it.name.value }}"
+                        "Found arguments ${selectionArgs.map { it.name.value }}"
             )
         )
     }
@@ -66,18 +68,21 @@ fun validateUnionRequest(field: Field.Union<*>, selectionNode: FieldNode) {
 
     if (illegalChildren?.any() == true) {
         throw ValidationException(
-            message = "Invalid selection set with properties: ${illegalChildren.joinToString(prefix = "[", postfix = "]") {
-                (it as FieldNode).aliasOrName.value
-            }} on union type property ${field.name} : ${field.returnType.possibleTypes.map { it.name }}",
+            message = "Invalid selection set with properties: ${
+                illegalChildren.joinToString(prefix = "[", postfix = "]") {
+                    (it as FieldNode).aliasOrName.value
+                }
+            } on union type property ${field.name} : ${field.returnType.possibleTypes.map { it.name }}",
             nodes = illegalChildren
         )
     }
 }
 
-fun validateName(name : String) {
-    if(name.startsWith("__")){
-        throw SchemaException("Illegal name '$name'. " +
-                "Names starting with '__' are reserved for introspection system"
+fun validateName(name: String) {
+    if (name.startsWith("__")) {
+        throw SchemaException(
+            "Illegal name '$name'. " +
+                    "Names starting with '__' are reserved for introspection system"
         )
     }
 }

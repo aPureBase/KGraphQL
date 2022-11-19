@@ -17,10 +17,10 @@ open class ParallelExecutionBenchmark {
     @Param("true", "false")
     var withSuspendResolvers = false
 
-    var schema : Schema = KGraphQL.schema {  }
+    var schema: Schema = KGraphQL.schema { }
 
     @Setup
-    fun setup(){
+    fun setup() {
         schema = KGraphQL.schema {
 
             if (withSuspendResolvers == false)
@@ -44,17 +44,19 @@ open class ParallelExecutionBenchmark {
         }
     }
 
-    @Benchmark @BenchmarkMode(Mode.AverageTime)
-    fun queryBenchmark(): String = schema.executeBlocking( "{ " + (0..999).map { "automated-${it}" }.joinToString(", ") + " }" )
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    fun queryBenchmark(): String =
+        schema.executeBlocking("{ " + (0..999).map { "automated-${it}" }.joinToString(", ") + " }")
 
     @Test
-    fun benchmarkWithThreads(){
+    fun benchmarkWithThreads() {
         setup()
         println(queryBenchmark())
     }
 
     @Test
-    fun benchmarkWithSuspendResolvers(){
+    fun benchmarkWithSuspendResolvers() {
         withSuspendResolvers = true
         setup()
         println(queryBenchmark())

@@ -1,18 +1,16 @@
 package com.apurebase.kgraphql.request
 
+import com.apurebase.kgraphql.GraphQLError
+import com.apurebase.kgraphql.ResourceFiles.kitchenSinkQuery
+import com.apurebase.kgraphql.d
+import com.apurebase.kgraphql.schema.model.ast.*
 import com.apurebase.kgraphql.schema.model.ast.DefinitionNode.ExecutableDefinitionNode.OperationDefinitionNode
 import com.apurebase.kgraphql.schema.model.ast.OperationTypeNode.QUERY
 import com.apurebase.kgraphql.schema.model.ast.SelectionNode.FieldNode
 import com.apurebase.kgraphql.schema.model.ast.TokenKindEnum.EOF
 import com.apurebase.kgraphql.schema.model.ast.TokenKindEnum.SOF
-import com.apurebase.kgraphql.schema.model.ast.TypeNode.NonNullTypeNode
-import com.apurebase.kgraphql.schema.model.ast.TypeNode.ListTypeNode
-import com.apurebase.kgraphql.schema.model.ast.TypeNode.NamedTypeNode
+import com.apurebase.kgraphql.schema.model.ast.TypeNode.*
 import com.apurebase.kgraphql.schema.model.ast.ValueNode.*
-import com.apurebase.kgraphql.GraphQLError
-import com.apurebase.kgraphql.ResourceFiles.kitchenSinkQuery
-import com.apurebase.kgraphql.d
-import com.apurebase.kgraphql.schema.model.ast.*
 import org.amshove.kluent.*
 import org.junit.jupiter.api.Test
 
@@ -24,6 +22,7 @@ class ParserTest {
         println(e.prettyPrint())
         throw e
     }
+
     private fun parse(source: Source) = Parser(source).parseDocument()
 
     private fun parseValue(source: String): ValueNode {
@@ -44,7 +43,7 @@ class ParserTest {
 
     private fun shouldThrowSyntaxError(
         src: Source,
-        block: GraphQLError.() -> Pair<Int, Int>?
+        block: GraphQLError.() -> Pair<Int, Int>?,
     ) = invoking { parse(src) } shouldThrow GraphQLError::class with {
         block()?.let {
             locations!!.size shouldBeEqualTo 1
@@ -56,7 +55,8 @@ class ParserTest {
     }
 
     private fun shouldThrowSyntaxError(src: String, block: GraphQLError.() -> Pair<Int, Int>?) = shouldThrowSyntaxError(
-        Source(src), block)
+        Source(src), block
+    )
 
     @Test
     fun `parse provides useful errors`() {
@@ -79,12 +79,14 @@ class ParserTest {
                     """.trimMargin()
         }
 
-        shouldThrowSyntaxError("""
+        shouldThrowSyntaxError(
+            """
             |
             |      { ...MissingOn }
             |      fragment MissingOn Type
             |
-        """.trimMargin()) {
+        """.trimMargin()
+        ) {
             message shouldBeEqualTo "Syntax Error: Expected \"on\", found Name \"Type\"."
             3 to 26
         }
@@ -161,10 +163,12 @@ class ParserTest {
     @Test
     fun `parses multi-byte characters`() {
         // Note: \u0A0A could be naively interpreted as two line-feed chars.
-        parse("""
+        parse(
+            """
             |# This comment has a ${'\u0A0A'} multi-byte character.
             |{ field(arg: "Has a ${'\u0A0A'} multi-byte character.") }
-        """.trimMargin()).run {
+        """.trimMargin()
+        ).run {
             (definitions[0] as OperationDefinitionNode).selectionSet.run {
                 (selections.first() as FieldNode).run {
                     (arguments!!.first().value as StringValueNode).run {
@@ -211,43 +215,52 @@ class ParserTest {
 
     @Test
     fun `parses anonymous mutation operations`() {
-        parse("""
+        parse(
+            """
             |mutation {
             |  mutationField
             |}
-        """.trimMargin())
+        """.trimMargin()
+        )
     }
 
     @Test
     fun `parses anonymous subscription operations`() {
-        parse("""
+        parse(
+            """
             |subscription {
             |  subscriptionField
             |}
-        """.trimMargin())
+        """.trimMargin()
+        )
     }
 
     @Test
     fun `parses named mutation operations`() {
-        parse("""
+        parse(
+            """
             |mutation Foo {
             |  mutationField
             |}
-        """.trimMargin())
+        """.trimMargin()
+        )
     }
 
     @Test
     fun `parses named subscription operations`() {
-        parse("""
+        parse(
+            """
             |subscription Foo {
             |  subscriptionField
             |}
-        """.trimMargin())
+        """.trimMargin()
+        )
     }
 
     @Test
     fun `creates ast`() {
-        parse("""
+        parse(
+            """
             |{
             |  node(id: 4) {
             |    id,
@@ -255,7 +268,8 @@ class ParserTest {
             |  }
             |}
             |
-        """.trimMargin()).run {
+        """.trimMargin()
+        ).run {
             loc!!.run {
                 start shouldBeEqualTo 0
                 end shouldBeEqualTo 41
@@ -362,14 +376,16 @@ class ParserTest {
 
     @Test
     fun `creates ast from nameless query without variables`() {
-        parse("""
+        parse(
+            """
             |query {
             |  node {
             |    id
             |  }
             |}
             |
-        """.trimMargin()).run {
+        """.trimMargin()
+        ).run {
             this shouldBeInstanceOf DocumentNode::class
             loc!!.run {
                 start shouldBeEqualTo 0

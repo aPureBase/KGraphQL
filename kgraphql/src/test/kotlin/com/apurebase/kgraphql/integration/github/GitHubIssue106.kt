@@ -21,11 +21,13 @@ class GitHubIssue106 {
         }
 
         invoking {
-            schema.executeBlocking("""
+            schema.executeBlocking(
+                """
                 {
                     test(radius: 2.3, location: { lat: 2.3, lng: 2.3 })
                 }
-            """)
+            """
+            )
         } shouldThrow GraphQLError::class with {
             message shouldBeEqualTo "Java class 'LatLng' as inputType are not supported"
         }
