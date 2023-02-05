@@ -1,8 +1,8 @@
 package com.apurebase.kgraphql.integration
 
 import com.apurebase.kgraphql.*
+import com.apurebase.kgraphql.schema.execution.ExecutionOptions
 import org.junit.jupiter.api.AfterEach
-import java.io.ByteArrayInputStream
 
 
 abstract class BaseSchemaTest {
@@ -317,8 +317,14 @@ abstract class BaseSchemaTest {
     @AfterEach
     fun cleanup() = createdActors.clear()
 
-    fun execute(query: String, variables : String? = null) = testedSchema
-        .executeBlocking(query, variables)
+    fun execute(
+        query: String,
+        variables: String? = null,
+        context: Context = Context(emptyMap()),
+        options: ExecutionOptions = ExecutionOptions(),
+        operationName: String? = null,
+    ) = testedSchema
+        .executeBlocking(query, variables, context, options, operationName)
         .also(::println)
         .deserialize()
 

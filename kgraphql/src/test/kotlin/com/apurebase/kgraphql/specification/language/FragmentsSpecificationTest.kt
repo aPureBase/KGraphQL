@@ -6,6 +6,7 @@ import com.apurebase.kgraphql.integration.BaseSchemaTest
 import com.apurebase.kgraphql.integration.BaseSchemaTest.Companion.INTROSPECTION_QUERY
 import com.apurebase.kgraphql.GraphQLError
 import org.amshove.kluent.invoking
+import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldThrow
 import org.amshove.kluent.withMessage
 import org.hamcrest.CoreMatchers
@@ -13,6 +14,7 @@ import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 @Specification("2.8 Fragments")
 class FragmentsSpecificationTest {
@@ -70,8 +72,8 @@ class FragmentsSpecificationTest {
                 "{\"expandedInfo\":false}"
         ))
         assertNoErrors(response)
-        assertThat(extractOrNull(response, "data/actor/actualActor/name"), equalTo("Boguś Linda"))
-        assertThat(extractOrNull(response, "data/actor/actualActor/age"), nullValue())
+        assertThat(response.extract("data/actor/actualActor/name"), equalTo("Boguś Linda"))
+        assertThrows<IllegalArgumentException> { response.extract("data/actor/actualActor/age") }
     }
 
     @Test
@@ -83,11 +85,11 @@ class FragmentsSpecificationTest {
             when (name) {
                 "David Fincher" /* director */ -> {
                     MatcherAssert.assertThat(map.extract<List<*>>("data/people[$i]/favActors"), CoreMatchers.notNullValue())
-                    MatcherAssert.assertThat(extractOrNull<Boolean>(map, "data/people[$i]/isOld"), CoreMatchers.nullValue())
+                    assertThrows<IllegalArgumentException> { map.extract("data/people[$i]/isOld") }
                 }
                 "Brad Pitt" /* actor */ -> {
                     MatcherAssert.assertThat(map.extract<Boolean>("data/people[$i]/isOld"), CoreMatchers.notNullValue())
-                    MatcherAssert.assertThat(extractOrNull<List<*>>(map, "data/people[$i]/favActors"), CoreMatchers.nullValue())
+                    assertThrows<IllegalArgumentException> { map.extract("data/people[$i]/favActors") }
                 }
             }
         }
@@ -102,11 +104,11 @@ class FragmentsSpecificationTest {
             when (name) {
                 "David Fincher" /* director */ -> {
                     MatcherAssert.assertThat(map.extract<List<*>>("data/people[$i]/favActors"), CoreMatchers.notNullValue())
-                    MatcherAssert.assertThat(extractOrNull<Boolean>(map, "data/people[$i]/isOld"), CoreMatchers.nullValue())
+                    assertThrows<IllegalArgumentException> { map.extract("data/people[$i]/isOld") }
                 }
                 "Brad Pitt" /* actor */ -> {
                     MatcherAssert.assertThat(map.extract<Boolean>("data/people[$i]/isOld"), CoreMatchers.notNullValue())
-                    MatcherAssert.assertThat(extractOrNull<List<*>>(map, "data/people[$i]/favActors"), CoreMatchers.nullValue())
+                    assertThrows<IllegalArgumentException> { map.extract("data/people[$i]/favActors") }
                 }
             }
         }

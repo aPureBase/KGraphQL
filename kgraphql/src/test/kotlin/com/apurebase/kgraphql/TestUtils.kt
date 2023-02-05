@@ -5,7 +5,6 @@ import com.apurebase.kgraphql.schema.Schema
 import com.apurebase.kgraphql.schema.dsl.SchemaBuilder
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.amshove.kluent.shouldBeEqualTo
-import org.amshove.kluent.shouldEqual
 import org.hamcrest.CoreMatchers
 import org.hamcrest.FeatureMatcher
 import org.hamcrest.MatcherAssert.assertThat
@@ -31,23 +30,17 @@ fun <T> Map<*, *>.extract(path: String) : T {
     try {
         return tokens.fold(this as Any?) { workingMap, token ->
             if(token.contains('[')){
-                val list = (workingMap as Map<*,*>)[token.substringBefore('[')]
+                if (!(workingMap as Map<*, *>).containsKey(token.substringBefore('['))) throw IllegalArgumentException()
+                val list = workingMap[token.substringBefore('[')]
                 val index = token.substring(token.indexOf('[')+1, token.length -1).toInt()
                 (list as List<*>)[index]
             } else {
-                (workingMap as Map<*,*>)[token]
+                if (!(workingMap as Map<*, *>).containsKey(token)) throw IllegalArgumentException()
+                workingMap[token]
             }
         } as T
     } catch (e : Exception){
-        throw IllegalArgumentException("Path: $path does not exist in map: ${this}", e)
-    }
-}
-
-fun <T>extractOrNull(map: Map<*,*>, path : String) : T? {
-    try {
-        return map.extract(path)
-    } catch (e: IllegalArgumentException){
-        return null
+        throw IllegalArgumentException("Path: $path does not exist in map: $this", e)
     }
 }
 

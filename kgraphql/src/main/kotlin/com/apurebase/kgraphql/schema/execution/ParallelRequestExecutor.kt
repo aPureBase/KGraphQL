@@ -182,7 +182,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             when (child) {
                 is Execution.Fragment -> objectNode.setAll<JsonNode>(handleFragment(ctx, value, child))
                 else -> {
-                    val (key, jsonNode) = handleProperty(ctx, value, child, type, node.children.size)
+                    val (key, jsonNode) = handleProperty(ctx, value, child, type, node.children.size) ?: continue
                     objectNode.merge(key, jsonNode)
                 }
             }
@@ -190,7 +190,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         return objectNode
     }
 
-    private suspend fun <T> handleProperty(ctx: ExecutionContext, value: T, child: Execution, type: Type, childrenSize: Int): Pair<String, JsonNode?> {
+    private suspend fun <T> handleProperty(ctx: ExecutionContext, value: T, child: Execution, type: Type, childrenSize: Int): Pair<String, JsonNode?>? {
         when (child) {
             //Union is subclass of Node so check it first
             is Execution.Union -> {
@@ -205,7 +205,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             is Execution.Node -> {
                 val field = type.unwrapped()[child.key]
                     ?: throw IllegalStateException("Execution unit ${child.key} is not contained by operation return type")
-                return child.aliasOrKey to createPropertyNode(ctx, value, child, field, childrenSize)
+                return child.aliasOrKey to (createPropertyNode(ctx, value, child, field, childrenSize) ?: return null)
             }
             else -> {
                 throw UnsupportedOperationException("Handling containers is not implemented yet")
@@ -224,7 +224,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                         when (child) {
                             is Execution.Fragment -> handleFragment(ctx, value, child).toList()
                             // TODO: Should not be 1
-                            else -> listOf(handleProperty(ctx, value, child, expectedType, 1))
+                            else -> listOfNotNull(handleProperty(ctx, value, child, expectedType, 1))
                         }
                     }.fold(mutableMapOf()) { map, entry -> map.merge(entry.first, entry.second) }
                 }

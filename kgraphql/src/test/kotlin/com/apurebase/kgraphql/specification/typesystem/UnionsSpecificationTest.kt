@@ -1,15 +1,15 @@
 package com.apurebase.kgraphql.specification.typesystem
 
 import com.apurebase.kgraphql.*
+import com.apurebase.kgraphql.helpers.getFields
 import com.apurebase.kgraphql.integration.BaseSchemaTest
 import com.apurebase.kgraphql.schema.SchemaException
-import com.apurebase.kgraphql.GraphQLError
-import com.apurebase.kgraphql.helpers.getFields
 import com.apurebase.kgraphql.schema.execution.Execution
 import org.amshove.kluent.*
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 
 @Specification("3.1.4 Unions")
@@ -236,7 +236,7 @@ class UnionsSpecificationTest : BaseSchemaTest() {
             }
         """.trimIndent()).also(::println).deserialize().run {
             extract<Int>("data/returnUnion/i") shouldBeEqualTo 1
-            extract<String?>("data/returnUnion/s") shouldBeEqualTo null
+            assertThrows<IllegalArgumentException> { extract("data/returnUnion/s") }
             extract<List<String>>("data/returnUnion/fields") shouldBeEqualTo listOf("i", "fields", "s")
         }
     }

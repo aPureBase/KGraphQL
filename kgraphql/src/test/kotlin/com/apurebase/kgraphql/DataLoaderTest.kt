@@ -382,7 +382,7 @@ class DataLoaderTest {
             val result = schema.executeBlocking(query).also(::println).deserialize()
 
             result.extract<String>("data/abc[0]/person/fullName") shouldBeEqualTo "${jogvan.firstName} ${jogvan.lastName}"
-            extractOrNull<String>(result, "data/abc[1]/person") shouldBeEqualTo null
+            result.extract<String?>("data/abc[1]/person") shouldBeEqualTo null
             result.extract<String>("data/abc[2]/person/fullName") shouldBeEqualTo "${juul.firstName} ${juul.lastName}"
         }
     }
