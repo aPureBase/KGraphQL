@@ -58,6 +58,48 @@ abstract class AbstractOperationDSL(
 
     fun <T, R, E, W, Q, A, S, B, U, C> resolver(function: suspend (R, E, W, Q, A, S, B, U, C) -> T) = resolver(FunctionWrapper.on(function))
 
+    fun <T, R, E, W, Q, A, S, B, U, C, D> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1) -> T) = resolver(FunctionWrapper.on(function))
+
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2) -> T) = resolver(FunctionWrapper.on(function))
+
+    @JvmName("resolver1")
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2, R3> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2, R3) -> T) = resolver(FunctionWrapper.on(function))
+
+    @JvmName("resolver2")
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2, R3, R4> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2, R3, R4) -> T) = resolver(FunctionWrapper.on(function))
+
+    @JvmName("resolver3")
+    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2, R3, R4, R5> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2, R3, R4, R5) -> T) = resolver(FunctionWrapper.on(function))
+
+
+//    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, G1, G2, R2, R3> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, G1, G2, R2, R3) -> T) = resolver(FunctionWrapper.on(function))
+
+
+//    fun <T, R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2, R3, R4, R5, R6> resolver(function: suspend (R, E, W, Q, A, S, B, U, C, D, F, G, H, I, J, K, L, M, N, R0, R1, R2, R3, R4, R5, R6) -> T) = resolver(FunctionWrapper.on(function))
+
+
     fun accessRule(rule: (Context) -> Exception?){
         val accessRuleAdapter: (Nothing?, Context) -> Exception? = { _, ctx -> rule(ctx) }
         this.accessRuleBlock = accessRuleAdapter
