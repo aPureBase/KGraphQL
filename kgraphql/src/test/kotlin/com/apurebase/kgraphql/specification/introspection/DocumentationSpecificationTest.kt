@@ -103,7 +103,7 @@ class DocumentationSpecificationTest {
             type<Sample>{
                 property<String>("add"){
                     description = expected
-                    resolver{ (content) -> content.toUpperCase() }
+                    resolver{ (content) -> content.uppercase() }
                 }
             }
         }

@@ -542,7 +542,7 @@ data class Lexer(
                         for (i in hex.length..3) {
                             append('0')
                         }
-                        append(hex.toUpperCase())
+                        append(hex.uppercase())
                     }
             }
             append("\"")
