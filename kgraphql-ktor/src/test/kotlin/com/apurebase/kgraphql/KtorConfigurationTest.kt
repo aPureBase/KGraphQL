@@ -1,7 +1,6 @@
 package com.apurebase.kgraphql
 
 import com.apurebase.kgraphql.schema.execution.Executor
-import io.ktor.server.application.install
 import io.ktor.server.application.plugin
 import io.ktor.server.testing.*
 import org.amshove.kluent.shouldBeEqualTo
