@@ -16,7 +16,7 @@ jobs:
       - name: Publish
         uses: eskatos/gradle-command-action@v1
         with:
-          gradle-version: 7.5.1
+          gradle-version: 7.6.3
           arguments: publish --stacktrace
         env:
           sonatypeUsername: ${{ secrets.SONATYPE_USERNAME }}

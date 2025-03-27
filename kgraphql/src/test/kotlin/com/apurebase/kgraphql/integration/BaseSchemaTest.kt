@@ -240,7 +240,7 @@ abstract class BaseSchemaTest {
                 ignore = true
             }
             transformation(Scenario::content) { content : String, uppercase: Boolean? ->
-                if(uppercase == true) content.toUpperCase() else content
+                if(uppercase == true) content.uppercase() else content
             }
         }
         val favouriteID = unionType("Favourite") {

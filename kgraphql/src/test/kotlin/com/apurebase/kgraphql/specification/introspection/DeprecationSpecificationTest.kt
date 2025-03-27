@@ -75,7 +75,7 @@ class DeprecationSpecificationTest {
                 property<String>("add"){
                     description = expectedDescription
                     deprecate(expected)
-                    resolver{ (content) -> content.toUpperCase() }
+                    resolver{ (content) -> content.uppercase() }
                 }
             }
         }

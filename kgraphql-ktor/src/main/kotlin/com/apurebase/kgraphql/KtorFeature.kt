@@ -94,7 +94,7 @@ class GraphQL(val schema: Schema) {
                 config.wrapWith?.invoke(this, routing) ?: routing(this)
             }
 
-            pipeline.pluginOrNull(Routing)?.apply(routing) ?: pipeline.install(Routing, routing)
+            pipeline.pluginOrNull(RoutingRoot)?.apply(routing) ?: pipeline.install(RoutingRoot, routing)
 
             pipeline.intercept(ApplicationCallPipeline.Monitoring) {
                 try {
