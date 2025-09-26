@@ -6,6 +6,8 @@
 # Disclaimer
 We are no longer able to maintain this project. Please go to https://github.com/stuebingerb/KGraphQL, where KGraphQL is still developed.
 
+------
+
 KGraphQL is a [Kotlin](https://kotlinlang.org/) implementation of [GraphQL](http://graphql.org/). It provides a rich DSL to set up the GraphQL schema.
 
 
